@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Livewire\Merchant;
+
+use App\Models\Merchant;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+
+#[Title('Pengaturan Lapak & QRIS - PentaCart IDN')]
+class ProfileSettings extends Component
+{
+    use WithFileUploads;
+
+    public Merchant $merchant;
+
+    public string $name = '';
+    public string $phone = '';
+    public string $location = '';
+    public string $description = '';
+    public bool $is_open = true;
+
+    public $new_qris = null;
+
+    protected function rules(): array
+    {
+        return [
+            'name' => 'required|string|min:3|max:100',
+            'phone' => ['required', 'regex:/^(\+62|62|08)[0-9]{8,13}$/'],
+            'location' => 'nullable|string|max:150',
+            'description' => 'nullable|string|max:500',
+            'new_qris' => 'nullable|image|max:2048', // max 2MB
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'name.required' => 'Nama toko wajib diisi.',
+            'phone.required' => 'Nomor WhatsApp wajib diisi.',
+            'phone.regex' => 'Format WhatsApp harus diawali 08, 62, atau +62.',
+            'new_qris.image' => 'File QRIS harus berupa gambar (JPG, PNG, WEBP).',
+            'new_qris.max' => 'Ukuran gambar QRIS maksimal 2MB.',
+        ];
+    }
+
+    public function mount()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $merchant = $user->merchant;
+        if (!$merchant) {
+            // Self-healing jika user belum punya merchant
+            $merchant = Merchant::create([
+                'user_id' => $user->id,
+                'name' => $user->name . ' Shop',
+                'slug' => Str::slug($user->name . '-' . $user->id),
+                'phone' => '6281234567890',
+                'is_open' => true,
+            ]);
+        }
+
+        $this->merchant = $merchant;
+        $this->name = $merchant->name;
+        $this->phone = $merchant->phone;
+        $this->location = $merchant->location ?? '';
+        $this->description = $merchant->description ?? '';
+        $this->is_open = $merchant->is_open;
+    }
+
+    public function toggleOpen()
+    {
+        $this->is_open = !$this->is_open;
+        $this->merchant->update(['is_open' => $this->is_open]);
+        session()->flash('status', 'Status toko berhasil diubah menjadi: ' . ($this->is_open ? 'BUKA' : 'TUTUP'));
+    }
+
+    public function updateProfile()
+    {
+        $this->validate();
+
+        // Normalisasi format nomor WA jadi format 62...
+        $cleanPhone = preg_replace('/[^0-9]/', '', $this->phone);
+        if (str_starts_with($cleanPhone, '0')) {
+            $cleanPhone = '62' . substr($cleanPhone, 1);
+        }
+
+        $data = [
+            'name' => $this->name,
+            'phone' => $cleanPhone,
+            'location' => $this->location,
+            'description' => $this->description,
+        ];
+
+        // Jika upload QRIS baru
+        if ($this->new_qris) {
+            // Hapus QRIS lama jika ada
+            if ($this->merchant->qris_image && Storage::disk('public')->exists($this->merchant->qris_image)) {
+                Storage::disk('public')->delete($this->merchant->qris_image);
+            }
+
+            $path = $this->new_qris->store('qris-images', 'public');
+            $data['qris_image'] = $path;
+            $this->new_qris = null;
+        }
+
+        $this->merchant->update($data);
+        $this->merchant->refresh();
+
+        session()->flash('status', 'Profil lapak dan QRIS berhasil diperbarui!');
+    }
+
+    public function render()
+    {
+        return view('livewire.merchant.profile-settings');
+    }
+}
