@@ -10,12 +10,21 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Halaman Utama Publik
-Route::get('/', function () {
-    $merchants = Merchant::withCount(['products' => function ($q) {
-        $q->where('is_available', true);
-    }])->latest()->get();
+Route::get('/', function (Request $request) {
+    $search = trim((string) $request->query('q', ''));
 
-    return view('welcome', compact('merchants'));
+    $merchants = Merchant::query()
+        ->with(['user', 'products' => function ($q) {
+            $q->where('is_available', true)->take(4);
+        }])
+        ->withCount(['products' => function ($q) {
+            $q->where('is_available', true);
+        }])
+        ->search($search)
+        ->latest()
+        ->get();
+
+    return view('welcome', compact('merchants', 'search'));
 })->name('home');
 
 // Guest Auth Routes (Livewire Murni Tanpa Breeze)
