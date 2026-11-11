@@ -21,7 +21,18 @@ class ProfileSettings extends Component
     public string $phone = '';
     public string $location = '';
     public string $description = '';
+    public string $keywords = '';
     public bool $is_open = true;
+
+    public array $presetTags = [
+        'Makanan Berat',
+        'Snack & Cemilan',
+        'Minuman & Es',
+        'Kopi',
+        'Jasa & Pulsa',
+        'Sarapan',
+        'Kuliner Malam',
+    ];
 
     public $new_qris = null;
 
@@ -32,6 +43,7 @@ class ProfileSettings extends Component
             'phone' => ['required', 'regex:/^(\+62|62|08)[0-9]{8,13}$/'],
             'location' => 'nullable|string|max:150',
             'description' => 'nullable|string|max:500',
+            'keywords' => 'nullable|string|max:2000',
             'new_qris' => 'nullable|image|max:2048', // max 2MB
         ];
     }
@@ -71,7 +83,29 @@ class ProfileSettings extends Component
         $this->phone = $merchant->phone;
         $this->location = $merchant->location ?? '';
         $this->description = $merchant->description ?? '';
+        $this->keywords = $merchant->keywords ?? '';
         $this->is_open = $merchant->is_open;
+    }
+
+    public function togglePresetKeyword(string $tag): void
+    {
+        $items = array_filter(array_map('trim', explode(',', $this->keywords)));
+        $lowerMap = array_map('mb_strtolower', $items);
+        $target = mb_strtolower($tag);
+
+        if (($index = array_search($target, $lowerMap, true)) !== false) {
+            unset($items[$index]);
+        } else {
+            $items[] = $tag;
+        }
+
+        $this->keywords = implode(', ', $items);
+    }
+
+    public function hasKeyword(string $tag): bool
+    {
+        $items = array_filter(array_map(fn ($v) => mb_strtolower(trim($v)), explode(',', $this->keywords)));
+        return in_array(mb_strtolower($tag), $items, true);
     }
 
     public function toggleOpen()
@@ -96,6 +130,7 @@ class ProfileSettings extends Component
             'phone' => $cleanPhone,
             'location' => $this->location,
             'description' => $this->description,
+            'keywords' => trim($this->keywords),
         ];
 
         // Jika upload QRIS baru

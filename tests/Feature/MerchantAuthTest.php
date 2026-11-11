@@ -100,4 +100,31 @@ class MerchantAuthTest extends TestCase
         $merchant->refresh();
         $this->assertFalse($merchant->is_open);
     }
+
+    public function test_merchant_can_set_preset_and_custom_keywords_and_scope_search_works(): void
+    {
+        $owner = User::factory()->create(['name' => 'Bang Devis']);
+        $merchant = Merchant::create([
+            'user_id' => $owner->id,
+            'name' => 'Warung Pojok',
+            'slug' => 'warung-pojok',
+            'phone' => '6281234567890',
+            'is_open' => true,
+        ]);
+
+        $this->actingAs($owner);
+
+        Livewire::test(ProfileSettings::class)
+            ->call('togglePresetKeyword', 'Minuman & Es')
+            ->set('keywords', 'Minuman & Es, julukan si raja es, es teh')
+            ->call('updateProfile')
+            ->assertHasNoErrors();
+
+        $merchant->refresh();
+        $this->assertStringContainsString('julukan si raja es', $merchant->keywords);
+
+        $this->assertCount(1, Merchant::search('raja es')->get());
+        $this->assertCount(1, Merchant::search('Bang Devis')->get());
+        $this->assertCount(0, Merchant::search('tidak ada')->get());
+    }
 }

@@ -75,6 +75,24 @@
                     @error('description') <span class="text-[11px] text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
+                {{-- Kata Kunci Pencarian / Julukan / Kategori --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kata Kunci Pencarian & Julukan</label>
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                        @foreach ($presetTags as $tag)
+                            @php $active = $this->hasKeyword($tag); @endphp
+                            <button type="button" wire:click="togglePresetKeyword('{{ $tag }}')"
+                                class="px-2.5 py-1 rounded-full text-[11px] font-bold border transition cursor-pointer {{ $active ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-blue-50/70 text-blue-700 border-blue-200/70 hover:bg-blue-100' }}">
+                                {{ $active ? '✓ ' : '+ ' }}{{ $tag }}
+                            </button>
+                        @endforeach
+                    </div>
+                    <textarea wire:model.live="keywords" rows="2" placeholder="Tambahkan kata kunci bebas dipisah koma, misal: es teh, mas devis, gedung umar, dimsum..." 
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition"></textarea>
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Klik preset di atas atau ketik kata kunci/julukan sebanyak-banyaknya agar lapakmu mudah ketemu di search.</span>
+                    @error('keywords') <span class="text-[11px] text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
                 <div class="pt-2">
                     <button type="submit" 
                         class="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold text-sm shadow-md shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
