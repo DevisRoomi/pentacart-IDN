@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
     private function ensureDemoQrisSvg(string $slug, string $merchantName): string
     {
         $path = "qris-images/demo-{$slug}.svg";
-        if (Storage::disk('public')->exists($path)) {
+        if (Storage::disk('public')->exists($path) && ! str_contains((string) Storage::disk('public')->get($path), '&bull;')) {
             return $path;
         }
 
@@ -60,7 +60,7 @@ class DatabaseSeeder extends Seeder
   <rect x="44" y="158" width="38" height="38" rx="6" fill="none" stroke="#1d4ed8" stroke-width="6"/>
   <rect x="55" y="169" width="16" height="16" rx="3" fill="#0f172a"/>
   {$rects}
-  <text x="110" y="226" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#1e40af">SCAN &amp; BAYAR &bull; IDN KAMPUS</text>
+  <text x="110" y="226" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#1e40af">SCAN &amp; BAYAR &#8226; IDN KAMPUS</text>
 </svg>
 SVG;
 
