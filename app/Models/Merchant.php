@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,13 +23,74 @@ class Merchant extends Model
         'keywords',
         'location',
         'is_open',
+        'schedule',
     ];
 
     protected function casts(): array
     {
         return [
             'is_open' => 'boolean',
+            'schedule' => 'array',
         ];
+    }
+
+    /**
+     * Evaluate current operational status using WIB (Asia/Jakarta).
+     * Returns ['open' => bool, 'label' => string, 'hint' => ?string]
+     */
+    public function operationalStatus(?CarbonInterface $now = null): array
+    {
+        if (! $this->is_open) {
+            return [
+                'open' => false,
+                'label' => 'Tutup',
+                'hint' => 'Dinonaktifkan penjual',
+            ];
+        }
+
+        $sessions = collect($this->schedule ?? [])
+            ->filter(fn ($s) => is_array($s) && ! empty($s['start']) && ! empty($s['end']))
+            ->sortBy('start')
+            ->values();
+
+        if ($sessions->isEmpty()) {
+            return [
+                'open' => true,
+                'label' => 'Buka',
+                'hint' => null,
+            ];
+        }
+
+        $wibTime = ($now ?? now())->copy()->timezone('Asia/Jakarta')->format('H:i');
+
+        foreach ($sessions as $session) {
+            if ($wibTime >= $session['start'] && $wibTime <= $session['end']) {
+                return [
+                    'open' => true,
+                    'label' => 'Buka',
+                    'hint' => "s.d. {$session['end']} WIB",
+                ];
+            }
+        }
+
+        $nextSession = $sessions->first(fn ($s) => $s['start'] > $wibTime) ?? $sessions->first();
+
+        return [
+            'open' => false,
+            'label' => 'Tutup Sementara',
+            'hint' => "Buka lagi {$nextSession['start']} WIB",
+        ];
+    }
+
+    public function formattedSchedule(): string
+    {
+        $sessions = collect($this->schedule ?? [])
+            ->filter(fn ($s) => is_array($s) && ! empty($s['start']) && ! empty($s['end']))
+            ->sortBy('start')
+            ->map(fn ($s) => "{$s['start']}-{$s['end']}")
+            ->values();
+
+        return $sessions->implode(', ');
     }
 
     public function scopeSearch(Builder $query, ?string $term): Builder

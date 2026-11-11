@@ -5,6 +5,7 @@
         ->whereDate('ordered_at', now()->timezone('Asia/Jakarta')->toDateString())
         ->count();
     $activeProductsCount = $merchant->products()->where('is_available', true)->count();
+    $opStatus = $merchant->operationalStatus();
 @endphp
 
 <div class="space-y-5 animate-editorial-in">
@@ -33,10 +34,13 @@
         <div class="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between">
             <div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status Operasional</span>
-                <p class="text-base font-extrabold mt-1 flex items-center gap-2 {{ $merchant->is_open ? 'text-emerald-600' : 'text-slate-500' }}">
-                    <span class="w-2.5 h-2.5 rounded-full {{ $merchant->is_open ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400' }}"></span>
-                    {{ $merchant->is_open ? 'Lapak Buka' : 'Lapak Tutup' }}
+                <p class="text-base font-extrabold mt-1 flex items-center gap-2 {{ $opStatus['open'] ? 'text-emerald-600' : 'text-amber-600' }}">
+                    <span class="w-2.5 h-2.5 rounded-full {{ $opStatus['open'] ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400' }}"></span>
+                    {{ $opStatus['label'] }}
                 </p>
+                @if ($opStatus['hint'])
+                    <span class="text-[10px] font-medium text-slate-400 block mt-0.5">{{ $opStatus['hint'] }}</span>
+                @endif
             </div>
             <div class="text-[10px] font-mono text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
                 WIB

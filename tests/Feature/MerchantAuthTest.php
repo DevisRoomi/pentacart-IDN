@@ -127,4 +127,40 @@ class MerchantAuthTest extends TestCase
         $this->assertCount(1, Merchant::search('Bang Devis')->get());
         $this->assertCount(0, Merchant::search('tidak ada')->get());
     }
+
+    public function test_merchant_multi_session_schedule_evaluates_wib_status_automatically(): void
+    {
+        $owner = User::factory()->create();
+        $merchant = Merchant::create([
+            'user_id' => $owner->id,
+            'name' => 'Lapak Sesi',
+            'slug' => 'lapak-sesi',
+            'phone' => '6281234567890',
+            'is_open' => true,
+        ]);
+
+        // Empty schedule follows manual toggle
+        $this->assertTrue($merchant->operationalStatus()['open']);
+
+        $this->actingAs($owner);
+
+        Livewire::test(ProfileSettings::class)
+            ->call('addSession')
+            ->call('addSession')
+            ->call('updateProfile')
+            ->assertHasNoErrors();
+
+        $merchant->refresh();
+        $this->assertCount(2, $merchant->schedule);
+        $this->assertSame('13:00-14:30, 20:00-22:00', $merchant->formattedSchedule());
+
+        $insideSession1 = now()->timezone('Asia/Jakarta')->setTime(13, 30);
+        $this->assertTrue($merchant->operationalStatus($insideSession1)['open']);
+        $this->assertSame('s.d. 14:30 WIB', $merchant->operationalStatus($insideSession1)['hint']);
+
+        $betweenSessions = now()->timezone('Asia/Jakarta')->setTime(16, 0);
+        $this->assertFalse($merchant->operationalStatus($betweenSessions)['open']);
+        $this->assertSame('Tutup Sementara', $merchant->operationalStatus($betweenSessions)['label']);
+        $this->assertSame('Buka lagi 20:00 WIB', $merchant->operationalStatus($betweenSessions)['hint']);
+    }
 }
