@@ -24,6 +24,8 @@
         </div>
     </div>
 
+    <x-merchant.nav :merchant="$merchant" />
+
     {{-- Alert Flash Message --}}
     @if (session()->has('status'))
         <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/70 text-emerald-800 text-xs sm:text-sm font-semibold flex items-center justify-between shadow-xs">
