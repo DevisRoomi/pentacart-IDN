@@ -32,9 +32,13 @@ class DatabaseSeeder extends Seeder
                 'phone' => '6281234567890',
                 'location' => 'Asrama Umar Lt. 2 / Kamar 204',
                 'description' => 'Dimsum ayam hangat, gyoza panggang, dan chili oil homemade khusus anak asrama.',
+                'keywords' => 'Snack & Cemilan, Minuman & Es, es, dimsum, mas devis, umar',
                 'is_open' => true,
             ]
         );
+        if (! $dimsumMerchant->keywords) {
+            $dimsumMerchant->update(['keywords' => 'Snack & Cemilan, Minuman & Es, es, dimsum, mas devis, umar']);
+        }
 
         $dimsumProducts = [
             ['name' => 'Dimsum Ayam Original (Isi 4)', 'price' => 12000, 'description' => 'Topping wortel & saus sambal bangkok.'],
@@ -88,9 +92,13 @@ class DatabaseSeeder extends Seeder
                 'phone' => '6282188990011',
                 'location' => 'Stand Teras Masjid Lt. 1',
                 'description' => 'Kopi susu gula aren & matcha latte siap antar saat jam ngoding malam.',
+                'keywords' => 'Kopi, Minuman & Es, es, minuman, matcha, mas fajar, ngoding',
                 'is_open' => true,
             ]
         );
+        if (! $kopiMerchant->keywords) {
+            $kopiMerchant->update(['keywords' => 'Kopi, Minuman & Es, es, minuman, matcha, mas fajar, ngoding']);
+        }
 
         Product::firstOrCreate(
             ['merchant_id' => $kopiMerchant->id, 'name' => 'Es Kopi Susu Gula Aren'],
@@ -115,9 +123,13 @@ class DatabaseSeeder extends Seeder
                 'phone' => '6287744556677',
                 'location' => 'Asrama Abu Bakar Kamar 112',
                 'description' => 'Risol mayo lumer, tahu isi pedas, dan cireng bumbu rujak.',
+                'keywords' => 'Snack & Cemilan, Kuliner Malam, gorengan, risol, naufal, abu bakar',
                 'is_open' => false,
             ]
         );
+        if (! $snackMerchant->keywords) {
+            $snackMerchant->update(['keywords' => 'Snack & Cemilan, Kuliner Malam, gorengan, risol, naufal, abu bakar']);
+        }
 
         Product::firstOrCreate(
             ['merchant_id' => $snackMerchant->id, 'name' => 'Risol Mayo Smoked Beef (Isi 3)'],
