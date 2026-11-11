@@ -12,7 +12,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="h-full bg-mesh-editorial font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white flex flex-col min-h-screen">
+<body class="h-full bg-mesh-editorial bg-editorial-grid font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white flex flex-col min-h-screen">
     {{-- Header / Navbar --}}
     <header class="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-slate-200/60 shadow-xs">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
