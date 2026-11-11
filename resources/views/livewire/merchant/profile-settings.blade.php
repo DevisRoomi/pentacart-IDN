@@ -93,6 +93,47 @@
                     @error('keywords') <span class="text-[11px] text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
+                {{-- Jadwal Jam Buka Multi-Sesi (Otomatis WIB) --}}
+                <div class="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">Jadwal Buka Otomatis (WIB)</label>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Bisa diisi lebih dari 1 waktu (misal Sesi 1: 13:00-14:30 &amp; Sesi 2: 20:00-22:00).</p>
+                        </div>
+                        @if (count($sessions) < 4)
+                            <button type="button" wire:click="addSession"
+                                class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold shadow-xs transition cursor-pointer shrink-0">
+                                + Tambah Sesi
+                            </button>
+                        @endif
+                    </div>
+
+                    @if (empty($sessions))
+                        <div class="px-3 py-2.5 rounded-xl bg-white/80 border border-dashed border-blue-200 text-[11px] text-slate-400">
+                            Belum ada sesi jam diatur. Contoh bisa diisi 2 waktu: <strong>13:00 - 14:30</strong> &amp; <strong>20:00 - 22:00</strong>. (Jika kosong, status ikut saklar Buka/Tutup manual).
+                        </div>
+                    @else
+                        <div class="space-y-2">
+                            @foreach ($sessions as $idx => $session)
+                                <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200/80">
+                                    <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg shrink-0">Sesi {{ $idx + 1 }}</span>
+                                    <input type="time" wire:model="sessions.{{ $idx }}.start"
+                                        class="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-blue-500 outline-none">
+                                    <span class="text-xs font-bold text-slate-400">s.d.</span>
+                                    <input type="time" wire:model="sessions.{{ $idx }}.end"
+                                        class="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-blue-500 outline-none">
+                                    <button type="button" wire:click="removeSession({{ $idx }})"
+                                        class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer">
+                                        Hapus
+                                    </button>
+                                </div>
+                                @error("sessions.{$idx}.start") <span class="text-[11px] text-rose-500 font-medium block">{{ $message }}</span> @enderror
+                                @error("sessions.{$idx}.end") <span class="text-[11px] text-rose-500 font-medium block">{{ $message }}</span> @enderror
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
                 <div class="pt-2">
                     <button type="submit" 
                         class="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold text-sm shadow-md shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
