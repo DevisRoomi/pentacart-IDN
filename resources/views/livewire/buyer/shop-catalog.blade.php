@@ -442,7 +442,7 @@
                         @if ($merchant->qris_image)
                             <img src="{{ asset('storage/' . $merchant->qris_image) }}"
                                 alt="QRIS {{ $merchant->name }}"
-                                class="w-64 h-64 object-contain rounded-xl bg-white p-2 shadow-sm border border-slate-200">
+                                class="w-full max-w-[320px] max-h-[360px] object-contain rounded-xl bg-white p-2 shadow-sm border border-slate-200">
                             
                             <a href="{{ asset('storage/' . $merchant->qris_image) }}" download
                                 class="mt-3 text-[11px] font-bold text-blue-600 hover:underline flex items-center gap-1">

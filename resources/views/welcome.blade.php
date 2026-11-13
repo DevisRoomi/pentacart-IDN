@@ -194,7 +194,7 @@
                     @endphp
 
                     <article id="card-{{ $m->slug }}"
-                             class="merchant-bento-card group/card relative rounded-3xl p-5 bg-white/95 border border-slate-200/80 shadow-md shadow-blue-900/5 flex flex-col justify-between overflow-hidden min-h-[380px]">
+                             class="merchant-bento-card group/card relative rounded-3xl p-5 bg-white/95 border border-slate-200/80 shadow-md shadow-blue-900/5 flex flex-col justify-between overflow-hidden min-h-[420px]">
                         
                         {{-- Ambient Glass Accent --}}
                         <div class="pointer-events-none absolute -right-12 -top-12 w-36 h-36 rounded-full bg-blue-500/5 blur-2xl group-hover/card:bg-blue-500/10 transition-colors"></div>
@@ -272,32 +272,35 @@
                             </div>
 
                             {{-- Panel 2: Holographic QRIS Shutter (Meluncur Halus dari Bawah saat Hover/Tap) --}}
-                            <div class="shutter-qris-panel absolute inset-0 flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-b from-blue-50/90 via-white to-slate-50/95 border border-blue-200/70 shadow-inner">
-                                @if ($qrisUrl)
-                                    <button type="button"
-                                            onclick="openQrisModal({{ Js::from($m->name) }}, {{ Js::from($qrisUrl) }}, {{ Js::from($waUrl) }}, {{ Js::from($m->location ?? 'Kampus IDN') }}, {{ Js::from($op['label']) }})"
-                                            class="relative group/qr flex flex-col items-center cursor-pointer p-2 rounded-xl bg-white border border-slate-200/90 shadow-sm hover:border-blue-400 transition">
-                                        
-                                        {{-- Laser Scanner Shutter Sweep --}}
-                                        <div class="pointer-events-none absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_8px_1px_rgba(59,130,246,0.8)] scanner-shutter-beam opacity-0 z-20"></div>
+                            @if ($qrisUrl)
+                                <div onclick="openQrisModal({{ Js::from($m->name) }}, {{ Js::from($qrisUrl) }}, {{ Js::from($waUrl) }}, {{ Js::from($m->location ?? 'Kampus IDN') }}, {{ Js::from($op['label']) }})"
+                                     role="button"
+                                     tabindex="0"
+                                     aria-label="Perbesar QRIS {{ $m->name }}"
+                                     class="shutter-qris-panel absolute inset-0 flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-blue-50/95 via-white to-slate-50 border border-blue-200/80 shadow-inner cursor-pointer group/qr">
+                                    
+                                    {{-- Laser Scanner Shutter Sweep --}}
+                                    <div class="pointer-events-none absolute inset-x-3 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_10px_2px_rgba(59,130,246,0.85)] scanner-shutter-beam opacity-0 z-20"></div>
 
+                                    {{-- Wadah QRIS Besar --}}
+                                    <div class="w-full flex-1 max-h-[220px] flex items-center justify-center p-2 rounded-xl bg-white border border-slate-200/90 shadow-sm group-hover/qr:border-blue-400 group-hover/qr:shadow-md transition">
                                         <img src="{{ $qrisUrl }}"
                                              alt="QRIS {{ $m->name }}"
-                                             class="w-36 h-36 object-contain rounded-lg bg-white select-none">
-                                        
-                                        <span class="mt-1.5 text-[10px] font-extrabold text-blue-600 group-hover/qr:underline flex items-center gap-1">
-                                            <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                            </svg>
-                                            Perbesar / Unduh
-                                        </span>
-                                    </button>
-                                @else
-                                    <div class="py-6 text-center text-slate-400">
-                                        <span class="text-xs font-bold">QRIS Belum Tersedia</span>
+                                             class="w-full h-full max-h-[195px] object-contain select-none">
                                     </div>
-                                @endif
-                            </div>
+                                    
+                                    <span class="mt-2 text-[11px] font-extrabold text-blue-600 group-hover/qr:text-blue-700 flex items-center gap-1.5 shrink-0">
+                                        <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                        </svg>
+                                        Klik area ini untuk Perbesar / Unduh
+                                    </span>
+                                </div>
+                            @else
+                                <div class="shutter-qris-panel absolute inset-0 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center text-slate-400">
+                                    <span class="text-xs font-bold">QRIS Belum Tersedia</span>
+                                </div>
+                            @endif
 
                         </div>
 
@@ -334,7 +337,7 @@
     <div id="qris-zoom-modal"
          class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4"
          onclick="if (event.target === this) closeQrisModal()">
-        <div class="relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border border-blue-100 text-center animate-editorial-in">
+        <div class="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-blue-100 text-center animate-editorial-in">
             <button type="button" onclick="closeQrisModal()"
                     aria-label="Tutup modal QRIS"
                     class="absolute right-4 top-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm flex items-center justify-center cursor-pointer">
@@ -347,8 +350,8 @@
             <h3 id="modal-qris-title" class="text-xl font-black text-slate-900 tracking-tight">Nama Lapak</h3>
             <p id="modal-qris-location" class="text-xs text-slate-500 mt-0.5 mb-4">Lokasi</p>
 
-            <div class="p-4 rounded-2xl bg-slate-50 border border-blue-100 inline-block mb-5">
-                <img id="modal-qris-img" src="" alt="QRIS Zoom" class="w-60 h-60 object-contain rounded-xl bg-white mx-auto">
+            <div class="p-4 rounded-2xl bg-slate-50 border border-blue-100 inline-block mb-5 max-w-full">
+                <img id="modal-qris-img" src="" alt="QRIS Zoom" class="w-72 sm:w-80 max-h-[380px] object-contain rounded-xl bg-white mx-auto shadow-sm p-2">
             </div>
 
             <div class="grid grid-cols-2 gap-2.5">
