@@ -94,32 +94,86 @@
     animation: orbitPulse 8s linear infinite;
 }
 
-/* Desktop Hover Reveal: QRIS card hover effect and stacking */
+/* Awwwards-grade: Holographic Receipt & Shutter Slide Interactive Grid */
+.merchant-bento-grid:hover .merchant-bento-card:not(:hover) {
+    opacity: 0.58;
+    filter: grayscale(12%) blur(0.4px);
+    transform: scale(0.985);
+}
+
+.merchant-bento-card {
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), 
+                box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 240ms ease,
+                filter 240ms ease;
+    will-change: transform, box-shadow;
+}
+
+.merchant-bento-card:hover {
+    transform: translateY(-4px) scale(1.015);
+    box-shadow: 0 20px 35px -10px rgba(30, 58, 138, 0.12), 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+/* Shutter transitions */
+.shutter-menu-panel {
+    transition: opacity 280ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.shutter-qris-panel {
+    transition: opacity 300ms ease, transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(18px) scale(0.96);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* On Desktop Hover: slide out menu, slide in QRIS cleanly INSIDE card */
 @media (min-width: 768px) {
-    .qris-pop-stage {
-        position: relative;
-        overflow: visible;
-        z-index: 10;
-        transition: z-index 0s;
-    }
-
-    .qris-pop-stage:hover,
-    .qris-pop-stage:focus-within {
-        z-index: 40;
-    }
-
-    .qris-pop-drawer {
-        transition: transform 340ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms ease;
-        transform: translateY(16px) scale(0.95);
+    .merchant-bento-card:hover .shutter-menu-panel,
+    .merchant-bento-card.show-qris-active .shutter-menu-panel {
         opacity: 0;
+        transform: translateY(-12px);
         pointer-events: none;
     }
 
-    .qris-pop-stage:hover .qris-pop-drawer,
-    .qris-pop-stage:focus-within .qris-pop-drawer {
-        transform: translateY(-132px) scale(1);
+    .merchant-bento-card:hover .shutter-qris-panel,
+    .merchant-bento-card.show-qris-active .shutter-qris-panel {
         opacity: 1;
+        transform: translateY(0) scale(1);
         pointer-events: auto;
+    }
+
+    .merchant-bento-card:hover .scanner-shutter-beam {
+        animation: shutterSweep 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+}
+
+/* Mobile Manual Toggle (State class toggled via JS) */
+.merchant-bento-card.show-qris-active .shutter-menu-panel {
+    opacity: 0;
+    transform: translateY(-12px);
+    pointer-events: none;
+}
+
+.merchant-bento-card.show-qris-active .shutter-qris-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+@keyframes shutterSweep {
+    0% {
+        top: 0%;
+        opacity: 0;
+    }
+    15% {
+        opacity: 1;
+    }
+    85% {
+        opacity: 1;
+    }
+    100% {
+        top: 96%;
+        opacity: 0;
     }
 }
 
