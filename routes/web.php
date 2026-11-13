@@ -3,6 +3,7 @@
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Buyer\ShopCatalog;
+use App\Livewire\Merchant\OrderHistory;
 use App\Livewire\Merchant\ProfileSettings;
 use App\Models\Merchant;
 use Illuminate\Http\Request;
@@ -10,12 +11,21 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Halaman Utama Publik
-Route::get('/', function () {
-    $merchants = Merchant::withCount(['products' => function ($q) {
-        $q->where('is_available', true);
-    }])->latest()->get();
+Route::get('/', function (Request $request) {
+    $search = trim((string) $request->query('q', ''));
 
-    return view('welcome', compact('merchants'));
+    $merchants = Merchant::query()
+        ->with(['user', 'products' => function ($q) {
+            $q->where('is_available', true)->take(4);
+        }])
+        ->withCount(['products' => function ($q) {
+            $q->where('is_available', true);
+        }])
+        ->search($search)
+        ->latest()
+        ->get();
+
+    return view('welcome', compact('merchants', 'search'));
 })->name('home');
 
 // Buyer Public Catalog & Order Flow (Fitur Apip)
@@ -31,6 +41,13 @@ Route::middleware('guest')->group(function () {
 // Merchant Protected Routes
 Route::middleware('auth')->group(function () {
     Route::get('/merchant/profile', ProfileSettings::class)->name('merchant.profile');
+    Route::get('/merchant/orders', OrderHistory::class)->name('merchant.orders');
+
+    // Placeholder aman sampai modul ProductManager milik Ahmad di-merge ke main
+    Route::get('/merchant/products', function () {
+        $merchant = Auth::user()->merchant;
+        return view('merchant.products-placeholder', compact('merchant'));
+    })->name('merchant.products');
 
     Route::post('/logout', function (Request $request) {
         Auth::logout();

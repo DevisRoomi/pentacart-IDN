@@ -24,6 +24,8 @@
         </div>
     </div>
 
+    <x-merchant.nav :merchant="$merchant" />
+
     {{-- Alert Flash Message --}}
     @if (session()->has('status'))
         <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/70 text-emerald-800 text-xs sm:text-sm font-semibold flex items-center justify-between shadow-xs">
@@ -71,6 +73,65 @@
                     <textarea wire:model="description" rows="3" placeholder="Sedia aneka snack, gorengan hangat, dan minuman dingin segar..." 
                         class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition"></textarea>
                     @error('description') <span class="text-[11px] text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Kata Kunci Pencarian / Julukan / Kategori --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kata Kunci Pencarian & Julukan</label>
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                        @foreach ($presetTags as $tag)
+                            @php $active = $this->hasKeyword($tag); @endphp
+                            <button type="button" wire:click="togglePresetKeyword('{{ $tag }}')"
+                                class="px-2.5 py-1 rounded-full text-[11px] font-bold border transition cursor-pointer {{ $active ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-blue-50/70 text-blue-700 border-blue-200/70 hover:bg-blue-100' }}">
+                                {{ $active ? '✓ ' : '+ ' }}{{ $tag }}
+                            </button>
+                        @endforeach
+                    </div>
+                    <textarea wire:model.live="keywords" rows="2" placeholder="Tambahkan kata kunci bebas dipisah koma, misal: es teh, mas devis, gedung umar, dimsum..." 
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition"></textarea>
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Klik preset di atas atau ketik kata kunci/julukan sebanyak-banyaknya agar lapakmu mudah ketemu di search.</span>
+                    @error('keywords') <span class="text-[11px] text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Jadwal Jam Buka Multi-Sesi (Otomatis WIB) --}}
+                <div class="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">Jadwal Buka Otomatis (WIB)</label>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Bisa diisi lebih dari 1 waktu (misal Sesi 1: 13:00-14:30 &amp; Sesi 2: 20:00-22:00).</p>
+                        </div>
+                        @if (count($sessions) < 4)
+                            <button type="button" wire:click="addSession"
+                                class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold shadow-xs transition cursor-pointer shrink-0">
+                                + Tambah Sesi
+                            </button>
+                        @endif
+                    </div>
+
+                    @if (empty($sessions))
+                        <div class="px-3 py-2.5 rounded-xl bg-white/80 border border-dashed border-blue-200 text-[11px] text-slate-400">
+                            Belum ada sesi jam diatur. Contoh bisa diisi 2 waktu: <strong>13:00 - 14:30</strong> &amp; <strong>20:00 - 22:00</strong>. (Jika kosong, status ikut saklar Buka/Tutup manual).
+                        </div>
+                    @else
+                        <div class="space-y-2">
+                            @foreach ($sessions as $idx => $session)
+                                <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200/80">
+                                    <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg shrink-0">Sesi {{ $idx + 1 }}</span>
+                                    <input type="time" wire:model="sessions.{{ $idx }}.start"
+                                        class="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-blue-500 outline-none">
+                                    <span class="text-xs font-bold text-slate-400">s.d.</span>
+                                    <input type="time" wire:model="sessions.{{ $idx }}.end"
+                                        class="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-blue-500 outline-none">
+                                    <button type="button" wire:click="removeSession({{ $idx }})"
+                                        class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer">
+                                        Hapus
+                                    </button>
+                                </div>
+                                @error("sessions.{$idx}.start") <span class="text-[11px] text-rose-500 font-medium block">{{ $message }}</span> @enderror
+                                @error("sessions.{$idx}.end") <span class="text-[11px] text-rose-500 font-medium block">{{ $message }}</span> @enderror
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 <div class="pt-2">
