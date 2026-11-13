@@ -41,18 +41,15 @@ Route::middleware('guest')->group(function () {
 // Merchant Protected Routes
 Route::middleware('auth')->group(function () {
     Route::get('/merchant/profile', ProfileSettings::class)->name('merchant.profile');
+    Route::livewire('/merchant/products', 'merchant.product-manager')->name('merchant.products');
     Route::get('/merchant/orders', OrderHistory::class)->name('merchant.orders');
 
-    // Placeholder aman sampai modul ProductManager milik Ahmad di-merge ke main
-    Route::get('/merchant/products', function () {
-        $merchant = Auth::user()->merchant;
-        return view('merchant.products-placeholder', compact('merchant'));
-    })->name('merchant.products');
-
+    
     Route::post('/logout', function (Request $request) {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('home');
     })->name('logout');
 });

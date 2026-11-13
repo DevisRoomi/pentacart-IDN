@@ -37,6 +37,9 @@
                         <span class="hidden sm:inline">Lapak:</span>
                         <span class="font-bold text-slate-900 truncate max-w-[100px] sm:max-w-[120px]">{{ Auth::user()->merchant->name ?? 'Profil Toko' }}</span>
                     </a>
+                    <a href="{{ route('merchant.products') }}" class="text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 transition px-2.5 py-1.5 rounded-lg hover:bg-slate-100/60">
+                        Kelola Menu
+                    </a>
                     
                     <form action="{{ route('logout') }}" method="POST" class="inline">
                         @csrf
