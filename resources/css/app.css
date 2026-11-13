@@ -94,11 +94,18 @@
     animation: orbitPulse 8s linear infinite;
 }
 
-/* Desktop Hover Reveal: QRIS slides smoothly upward from BEHIND the card */
+/* Desktop Hover Reveal: QRIS card hover effect and stacking */
 @media (min-width: 768px) {
     .qris-pop-stage {
         position: relative;
         overflow: visible;
+        z-index: 10;
+        transition: z-index 0s;
+    }
+
+    .qris-pop-stage:hover,
+    .qris-pop-stage:focus-within {
+        z-index: 40;
     }
 
     .qris-pop-drawer {
