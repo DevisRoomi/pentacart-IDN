@@ -20,9 +20,10 @@
                 {{-- Search Bar Utama --}}
                 <form action="{{ route('home') }}#katalog-lapak" method="GET" class="relative max-w-md mx-auto lg:mx-0">
                     <input type="text"
+                           id="hero-search-input"
                            name="q"
                            value="{{ $search ?? '' }}"
-                           placeholder="Cari dimsum, es, kopi, atau lapak..."
+                           placeholder="Cari lapak, menu, atau nama penjual..."
                            class="w-full pl-4 pr-20 py-3.5 text-sm rounded-2xl bg-white/95 border border-blue-200/80 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/15 outline-none shadow-md shadow-blue-900/5 transition placeholder:text-slate-400">
                     <button type="submit"
                             class="absolute right-1.5 top-1.5 bottom-1.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer">
@@ -33,7 +34,7 @@
                 {{-- Quick Keyword Pills --}}
                 <div class="flex flex-wrap items-center justify-center lg:justify-start gap-1.5 text-[11px]">
                     <span class="text-slate-400 font-semibold mr-1">Cepat:</span>
-                    @foreach (['Es', 'Dimsum', 'Kopi', 'Snack & Cemilan', 'Umar'] as $pill)
+                    @foreach (['Basreng', 'Mie', 'Aqeep', 'Roti Aoka', 'Gorio Rio'] as $pill)
                         <a href="{{ route('home', ['q' => $pill]) }}#katalog-lapak"
                            class="px-2.5 py-1 rounded-full font-semibold border transition {{ strtolower($search ?? '') === strtolower($pill) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white/80 text-slate-600 border-slate-200/80 hover:border-blue-300 hover:text-blue-700' }}">
                             {{ $pill }}
@@ -182,7 +183,7 @@
                 @endif
             </div>
         @else
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-y-10 md:pt-32">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-y-12 pt-2 md:pt-32">
                 @foreach ($merchants as $m)
 
                     @php
@@ -193,8 +194,8 @@
                     @endphp
 
                     <article class="qris-pop-stage relative">
-                        {{-- Pop-out QRIS Drawer (Visible on mobile top; slides smoothly from behind card on desktop hover) --}}
-                        <div class="mb-4 md:mb-0 md:absolute md:top-0 md:inset-x-4 md:z-0 qris-pop-drawer">
+                        {{-- Pop-out QRIS Drawer: Khusus Desktop Hover (Hidden on mobile) --}}
+                        <div class="hidden md:block md:absolute md:top-0 md:inset-x-4 md:z-0 qris-pop-drawer">
                             <div class="rounded-2xl bg-white border border-blue-200/80 shadow-xl shadow-blue-900/15 p-3 pb-5 flex flex-col items-center">
                                 @if ($qrisUrl)
                                     <button type="button"
@@ -215,7 +216,7 @@
                             </div>
                         </div>
 
-                        {{-- Card Surface (z-10 so drawer emerges cleanly from behind it!) --}}
+                        {{-- Card Surface (z-10 so drawer emerges cleanly from behind it on desktop) --}}
                         <div class="relative z-10 glass-card glass-card-hover rounded-3xl p-5 shadow-sm flex flex-col justify-between h-full">
                         {{-- Card Body --}}
                         <div>
@@ -228,7 +229,7 @@
                                 @if ($qrisUrl)
                                     <button type="button"
                                             onclick="openQrisModal({{ Js::from($m->name) }}, {{ Js::from($qrisUrl) }}, {{ Js::from($waUrl) }}, {{ Js::from($m->location ?? 'Kampus IDN') }}, {{ Js::from($op['label']) }})"
-                                            class="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-[10px] font-extrabold border border-blue-200/70 transition cursor-pointer">
+                                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-[10px] font-extrabold border border-blue-200/70 transition cursor-pointer">
                                         QRIS
                                     </button>
                                 @endif
@@ -403,5 +404,63 @@
         document.addEventListener('keydown', (e) => {
             closeQrisModal();
         });
+
+        // Dynamic typing placeholder based on actual registered merchants & students
+        (function () {
+            const searchInput = document.getElementById('hero-search-input');
+            if (!searchInput) return;
+
+            const suggestions = [
+                'Cari "Hammam" (Gorio Rio)...',
+                'Cari "Arya" (Mie & Jasa Masak)...',
+                'Cari "Aqeep" (Moring Pedas)...',
+                'Cari "Rafi" (Basreng & Usus)...',
+                'Cari "Nabil" (Keripik Pisang)...',
+                'Cari "Fauzan" (Corndog Sakan)...',
+                'Cari "Dzulfathan" (Roti Aoka)...',
+                'Cari "Azhar" (Ceroxand Basreng)...',
+                'Cari "Azhim" (Ubilum)...',
+                'Cari "Ghulam" (Junk Food)...'
+            ];
+
+            let sIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            let isFocused = false;
+
+            searchInput.addEventListener('focus', () => { isFocused = true; });
+            searchInput.addEventListener('blur', () => { isFocused = false; });
+
+            function typeStep() {
+                if (isFocused || searchInput.value.length > 0) {
+                    setTimeout(typeStep, 1000);
+                    return;
+                }
+
+                const currentText = suggestions[sIndex];
+                if (isDeleting) {
+                    charIndex--;
+                    searchInput.setAttribute('placeholder', currentText.substring(0, charIndex));
+                    if (charIndex === 0) {
+                        isDeleting = false;
+                        sIndex = (sIndex + 1) % suggestions.length;
+                        setTimeout(typeStep, 450);
+                        return;
+                    }
+                    setTimeout(typeStep, 40);
+                } else {
+                    charIndex++;
+                    searchInput.setAttribute('placeholder', currentText.substring(0, charIndex));
+                    if (charIndex === currentText.length) {
+                        isDeleting = true;
+                        setTimeout(typeStep, 2200); // pause saat teks selesai
+                        return;
+                    }
+                    setTimeout(typeStep, 70);
+                }
+            }
+
+            setTimeout(typeStep, 1200);
+        })();
     </script>
 </x-layouts.app>
