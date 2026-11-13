@@ -12,7 +12,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="h-full bg-mesh-editorial font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white flex flex-col min-h-screen">
+<body class="h-full bg-mesh-editorial bg-editorial-grid font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white flex flex-col min-h-screen">
     {{-- Header / Navbar --}}
     <header class="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-slate-200/60 shadow-xs">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -26,29 +26,29 @@
                 </div>
             </a>
 
-            <nav class="flex items-center gap-3">
-                <a href="{{ route('home') }}" class="text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 transition px-2.5 py-1.5 rounded-lg hover:bg-slate-100/60">
+            <nav class="flex items-center gap-2 sm:gap-3 shrink-0">
+                <a href="{{ route('home') }}" class="hidden sm:inline text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 transition px-2.5 py-1.5 rounded-lg hover:bg-slate-100/60 whitespace-nowrap">
                     Katalog
                 </a>
 
                 @auth
-                    <a href="{{ route('merchant.profile') }}" class="text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 transition px-2.5 py-1.5 rounded-lg hover:bg-slate-100/60 flex items-center gap-1.5">
+                    <a href="{{ route('merchant.profile') }}" class="text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 transition px-2.5 py-1.5 rounded-lg hover:bg-slate-100/60 flex items-center gap-1.5 whitespace-nowrap">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                         <span class="hidden sm:inline">Lapak:</span>
-                        <span class="font-bold text-slate-900 truncate max-w-[120px]">{{ Auth::user()->merchant->name ?? 'Profil Toko' }}</span>
+                        <span class="font-bold text-slate-900 truncate max-w-[100px] sm:max-w-[120px]">{{ Auth::user()->merchant->name ?? 'Profil Toko' }}</span>
                     </a>
                     
                     <form action="{{ route('logout') }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit" class="text-xs font-semibold text-rose-600 hover:text-rose-700 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 transition cursor-pointer">
+                        <button type="submit" class="text-xs font-semibold text-rose-600 hover:text-rose-700 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 transition cursor-pointer whitespace-nowrap">
                             Keluar
                         </button>
                     </form>
                 @else
-                    <a href="{{ route('login') }}" class="text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 px-3 py-1.5">
+                    <a href="{{ route('login') }}" class="text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 px-2.5 py-1.5 whitespace-nowrap">
                         Masuk
                     </a>
-                    <a href="{{ route('register') }}" class="text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl shadow-xs shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-95">
+                    <a href="{{ route('register') }}" class="text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-xs shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap">
                         Mulai Jualan
                     </a>
                 @endauth

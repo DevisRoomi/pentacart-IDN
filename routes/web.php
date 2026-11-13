@@ -2,6 +2,8 @@
 
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
+use App\Livewire\Buyer\ShopCatalog;
+use App\Livewire\Merchant\OrderHistory;
 use App\Livewire\Merchant\ProfileSettings;
 use App\Models\Merchant;
 use Illuminate\Http\Request;
@@ -9,13 +11,26 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Halaman Utama Publik
-Route::get('/', function () {
-    $merchants = Merchant::withCount(['products' => function ($q) {
-        $q->where('is_available', true);
-    }])->latest()->get();
+Route::get('/', function (Request $request) {
+    $search = trim((string) $request->query('q', ''));
 
-    return view('welcome', compact('merchants'));
+    $merchants = Merchant::query()
+        ->with(['user', 'products' => function ($q) {
+            $q->where('is_available', true)->take(4);
+        }])
+        ->withCount(['products' => function ($q) {
+            $q->where('is_available', true);
+        }])
+        ->search($search)
+        ->latest()
+        ->get();
+
+    return view('welcome', compact('merchants', 'search'));
 })->name('home');
+
+// Buyer Public Catalog & Order Flow (Fitur Apip)
+Route::get('/lapak/{merchant:slug}', ShopCatalog::class)->name('buyer.shop');
+Route::get('/shop/{merchant:slug}', ShopCatalog::class)->name('shop.catalog');
 
 // Guest Auth Routes (Livewire Murni Tanpa Breeze)
 Route::middleware('guest')->group(function () {
@@ -27,7 +42,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/merchant/profile', ProfileSettings::class)->name('merchant.profile');
     Route::livewire('/merchant/products', 'merchant.product-manager')->name('merchant.products');
+    Route::get('/merchant/orders', OrderHistory::class)->name('merchant.orders');
 
+    
     Route::post('/logout', function (Request $request) {
         Auth::logout();
         $request->session()->invalidate();
