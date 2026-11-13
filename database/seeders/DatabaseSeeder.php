@@ -218,5 +218,7 @@ SVG;
             ['merchant_id' => $snackMerchant->id, 'name' => 'Risol Mayo Smoked Beef (Isi 3)'],
             ['price' => 10000, 'description' => 'Mayo gurih dengan telur dan smoked beef.', 'is_available' => true]
         );
+        // Panggil seeder 10 lapak data riil mahasiswa kampus IDN
+        $this->call(StudentMerchantSeeder::class);
     }
 }
