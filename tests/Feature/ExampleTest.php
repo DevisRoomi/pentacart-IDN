@@ -43,4 +43,34 @@ class ExampleTest extends TestCase
         $res->assertSee('Chat WA');
         $res->assertSee('https://wa.me/6281234567890');
     }
+
+    public function test_landing_page_can_filter_open_only(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        $openMerchant = Merchant::create([
+            'user_id' => $user1->id,
+            'name' => 'Lapak Buka Terus',
+            'slug' => 'lapak-buka-terus',
+            'phone' => '628111111112',
+            'is_open' => true,
+            'schedule' => null,
+        ]);
+
+        $closedMerchant = Merchant::create([
+            'user_id' => $user2->id,
+            'name' => 'Lapak Tutup Dulu',
+            'slug' => 'lapak-tutup-dulu',
+            'phone' => '628222222223',
+            'is_open' => false,
+            'schedule' => null,
+        ]);
+
+        $response = $this->get('/?open_only=1');
+
+        $response->assertStatus(200);
+        $response->assertSee('Lapak Buka Terus');
+        $response->assertDontSee('Lapak Tutup Dulu');
+    }
 }

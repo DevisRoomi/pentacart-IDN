@@ -122,7 +122,7 @@
 
     {{-- 2. BARISAN QRIS & DAFTAR LAPAK KAMPUS --}}
     <section id="katalog-lapak" class="pt-4 space-y-5">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-2 border-b border-blue-100/80">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-2 border-b border-blue-100/80">
             <div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                     Barisan QRIS &amp; Lapak Mahasiswa
@@ -135,9 +135,25 @@
                     <span class="md:hidden">Tap QRIS di kartu untuk memperbesar, download, atau langsung chat penjual.</span>
                 </p>
             </div>
-            <span class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200/70 px-3 py-1 rounded-full self-start sm:self-auto">
-                {{ $merchants->count() }} Lapak Terdaftar
-            </span>
+            
+            <div class="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                {{-- Filter Pill: Semua vs Sedang Buka Saja --}}
+                <div class="inline-flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/70 text-xs font-bold">
+                    <a href="{{ route('home', array_filter(['q' => $search])) }}#katalog-lapak"
+                       class="px-3 py-1.5 rounded-lg transition {{ empty($openOnly) ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800' }}">
+                        Semua Lapak
+                    </a>
+                    <a href="{{ route('home', array_filter(['q' => $search, 'open_only' => 1])) }}#katalog-lapak"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition {{ !empty($openOnly) ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ !empty($openOnly) ? 'bg-white animate-pulse' : 'bg-emerald-500' }}"></span>
+                        Sedang Buka
+                    </a>
+                </div>
+
+                <span class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200/70 px-3 py-1.5 rounded-xl">
+                    {{ $merchants->count() }} Lapak
+                </span>
+            </div>
         </div>
 
         @if ($merchants->isEmpty())
@@ -224,7 +240,21 @@
                                 </p>
                             @endif
 
-                            <a href="{{ route('buyer.shop', $m->slug) }}" class="block group/title"><h3 class="font-black text-lg text-slate-900 group-hover/title:text-blue-600 tracking-tight leading-snug transition-colors">{{ $m->name }}</h3></a>
+                            <div class="flex items-center justify-between gap-2">
+                                <a href="{{ route('buyer.shop', $m->slug) }}" class="block group/title flex-1 min-w-0">
+                                    <h3 class="font-black text-lg text-slate-900 group-hover/title:text-blue-600 tracking-tight leading-snug transition-colors truncate">{{ $m->name }}</h3>
+                                </a>
+                                {{-- Tombol Salin Link Lapak --}}
+                                <button type="button"
+                                        onclick="copyShopLink({{ Js::from(route('buyer.shop', $m->slug)) }}, this)"
+                                        title="Salin Link Lapak"
+                                        aria-label="Salin Link Lapak {{ $m->name }}"
+                                        class="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition border border-transparent hover:border-blue-100 cursor-pointer">
+                                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                </button>
+                            </div>
 
                             @if ($m->location)
                                 <p class="text-[11px] font-semibold text-blue-700 mt-0.5">{{ $m->location }}</p>
@@ -347,6 +377,27 @@
             const modal = document.getElementById('qris-zoom-modal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+        }
+
+        function copyShopLink(url, btn) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url);
+            } else {
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+            }
+
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="text-[9px] font-black text-emerald-600 px-1">Disalin!</span>';
+            btn.classList.add('bg-emerald-50', 'text-emerald-600');
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('bg-emerald-50', 'text-emerald-600');
+            }, 1800);
         }
 
         document.addEventListener('keydown', (e) => {

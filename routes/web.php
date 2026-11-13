@@ -12,11 +12,12 @@ use Illuminate\Support\Facades\Route;
 
 // Halaman Utama Publik
 Route::get('/', function (Request $request) {
-    $search = trim((string) $request->query('q', ''));
+    $search = trim((string) $request->input('q', ''));
+    $openOnly = $request->boolean('open_only');
 
     $merchants = Merchant::query()
-        ->with(['user', 'products' => function ($q) {
-            $q->where('is_available', true)->take(4);
+        ->with(['products' => function ($q) {
+            $q->where('is_available', true)->latest();
         }])
         ->withCount(['products' => function ($q) {
             $q->where('is_available', true);
@@ -25,7 +26,14 @@ Route::get('/', function (Request $request) {
         ->latest()
         ->get();
 
-    return view('welcome', compact('merchants', 'search'));
+    if ($openOnly) {
+        $merchants = $merchants->filter(function ($merchant) {
+            $status = $merchant->operationalStatus();
+            return $status['open'] === true;
+        })->values();
+    }
+
+    return view('welcome', compact('merchants', 'search', 'openOnly'));
 })->name('home');
 
 // Buyer Public Catalog & Order Flow (Fitur Apip)
