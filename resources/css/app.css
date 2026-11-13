@@ -117,7 +117,7 @@
 
     .qris-pop-stage:hover .qris-pop-drawer,
     .qris-pop-stage:focus-within .qris-pop-drawer {
-        transform: translateY(-168px) scale(1);
+        transform: translateY(-132px) scale(1);
         opacity: 1;
         pointer-events: auto;
     }

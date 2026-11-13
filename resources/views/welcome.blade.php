@@ -182,7 +182,7 @@
                 @endif
             </div>
         @else
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-y-48 md:pt-40">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-y-10 md:pt-32">
                 @foreach ($merchants as $m)
 
                     @php
@@ -401,7 +401,7 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeQrisModal();
+            closeQrisModal();
         });
     </script>
 </x-layouts.app>
