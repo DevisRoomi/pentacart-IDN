@@ -83,7 +83,7 @@
         @else
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 @foreach ($merchants as $m)
-                    <div class="glass-card rounded-2xl p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between">
+                    <div class="glass-card rounded-2xl p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between group">
                         <div>
                             <div class="flex items-center justify-between gap-2 mb-2">
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $m->is_open ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-slate-100 text-slate-500' }}">
@@ -93,13 +93,17 @@
                                     <span class="text-[11px] text-slate-400 truncate max-w-[140px]">{{ $m->location }}</span>
                                 @endif
                             </div>
-                            <h3 class="font-extrabold text-base text-slate-900 tracking-tight">{{ $m->name }}</h3>
+                            <a href="{{ route('buyer.shop', $m->slug) }}" class="block">
+                                <h3 class="font-extrabold text-base text-slate-900 tracking-tight group-hover:text-blue-600 transition">{{ $m->name }}</h3>
+                            </a>
                             <p class="text-xs text-slate-500 mt-1 line-clamp-2">{{ $m->description ?? 'Lapak mahasiswa kampus IDN.' }}</p>
                         </div>
 
                         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                             <span class="text-slate-400 font-medium">{{ $m->products_count }} Menu Aktif</span>
-                            <span class="font-bold text-blue-600">Lihat Lapak &rarr;</span>
+                            <a href="{{ route('buyer.shop', $m->slug) }}" class="font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                <span>Lihat Lapak &rarr;</span>
+                            </a>
                         </div>
                     </div>
                 @endforeach

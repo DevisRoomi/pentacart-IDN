@@ -2,6 +2,7 @@
 
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
+use App\Livewire\Buyer\ShopCatalog;
 use App\Livewire\Merchant\ProfileSettings;
 use App\Models\Merchant;
 use Illuminate\Http\Request;
@@ -16,6 +17,10 @@ Route::get('/', function () {
 
     return view('welcome', compact('merchants'));
 })->name('home');
+
+// Buyer Public Catalog & Order Flow (Fitur Apip)
+Route::get('/lapak/{merchant:slug}', ShopCatalog::class)->name('buyer.shop');
+Route::get('/shop/{merchant:slug}', ShopCatalog::class)->name('shop.catalog');
 
 // Guest Auth Routes (Livewire Murni Tanpa Breeze)
 Route::middleware('guest')->group(function () {
