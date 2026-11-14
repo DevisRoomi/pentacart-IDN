@@ -171,4 +171,38 @@ class BuyerShopCatalogTest extends TestCase
 
         $this->assertDatabaseCount('orders', 0);
     }
+
+    public function test_displays_uploaded_product_image_when_available(): void
+    {
+        $productWithImage = Product::create([
+            'merchant_id' => $this->merchant->id,
+            'name' => 'Dimsum Mentai Spesial',
+            'price' => 15000,
+            'image' => 'products/dimsum-mentai.jpg',
+            'is_available' => true,
+        ]);
+
+        Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
+            ->assertSee('Dimsum Mentai Spesial')
+            ->assertSee(asset('storage/products/dimsum-mentai.jpg'));
+    }
+
+    public function test_displays_food_illustration_placeholder_when_product_has_no_image(): void
+    {
+        Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
+            ->assertSee('PentaCart Kitchen')
+            ->assertSee('Snack & Gorengan') // Dari Pisang Coklat Lumer
+            ->assertSee('Minuman Segar');   // Dari Es Teh Solo Segar
+    }
+
+    public function test_mobile_cart_modal_can_be_toggled(): void
+    {
+        Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
+            ->assertSet('showMobileCartModal', false)
+            ->call('openMobileCart')
+            ->assertSet('showMobileCartModal', true)
+            ->assertSee('Checkout Pesanan Asrama')
+            ->call('closeMobileCart')
+            ->assertSet('showMobileCartModal', false);
+    }
 }
