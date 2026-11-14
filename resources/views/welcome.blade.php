@@ -397,7 +397,7 @@
                         <svg class="size-4 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                         </svg>
-                        Gunakan roda mouse atau klik panah untuk scroll horizontal
+                        Gunakan tombol panah keyboard (&larr; &rarr;), roda mouse, atau klik tombol untuk menggeser rel
                     </span>
                     <div class="flex-1 max-w-xs h-1.5 rounded-full bg-slate-200/80 overflow-hidden">
                         <div id="rail-progress-bar" class="h-full bg-blue-600 rounded-full transition-all duration-150" style="width: 15%;"></div>
@@ -696,7 +696,29 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            closeQrisModal();
+            const modal = document.getElementById('qris-zoom-modal');
+            const isModalOpen = modal && !modal.classList.contains('hidden');
+
+            // Jika modal QRIS sedang terbuka: tombol apa saja menutup modal
+            if (isModalOpen) {
+                closeQrisModal();
+                return;
+            }
+
+            // Jika pengguna sedang mengetik di input search atau form, jangan geser rel
+            const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+            if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
+                return;
+            }
+
+            // Navigasi Keyboard Panah Kiri / Kanan untuk Geser Rel Kartu
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                scrollRail('right');
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                scrollRail('left');
+            }
         });
 
         // Dynamic typing placeholder based on actual registered merchants & students
