@@ -183,7 +183,7 @@
                 @endif
             </div>
         @else
-            <div class="merchant-bento-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+            <div class="merchant-bento-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 pt-2 sm:pt-4">
                 @foreach ($merchants as $m)
 
                     @php
@@ -194,29 +194,20 @@
                     @endphp
 
                     <article id="card-{{ $m->slug }}"
-                             class="merchant-bento-card group/card relative rounded-3xl p-5 bg-white/95 border border-slate-200/80 shadow-md shadow-blue-900/5 flex flex-col justify-between overflow-hidden min-h-[420px]">
+                             class="merchant-bento-card group/card relative rounded-3xl p-5 bg-white/95 border border-slate-200/80 shadow-md shadow-blue-900/5 flex flex-col justify-between overflow-hidden md:min-h-[420px]">
                         
                         {{-- Ambient Glass Accent --}}
                         <div class="pointer-events-none absolute -right-12 -top-12 w-36 h-36 rounded-full bg-blue-500/5 blur-2xl group-hover/card:bg-blue-500/10 transition-colors"></div>
 
-                        {{-- Card Header: Status + Toggle Mobile Pill + Copy Link --}}
+                        {{-- Card Header: Status & Salin Link --}}
                         <div class="relative z-10 flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase {{ $op['open'] ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-amber-50 text-amber-700 border border-amber-200/70' }}">
                                 <span class="w-1.5 h-1.5 rounded-full {{ $op['open'] ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500' }}"></span>
                                 {{ $op['label'] }}
                             </span>
 
-                            <div class="flex items-center gap-1.5">
-                                {{-- Tombol Toggle QRIS Mobile (Bisa di-tap di HP untuk intip QRIS) --}}
-                                @if ($qrisUrl)
-                                    <button type="button"
-                                            onclick="toggleCardQris('card-{{ $m->slug }}')"
-                                            class="md:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white text-[10px] font-extrabold border border-blue-200/70 transition cursor-pointer">
-                                        <span class="toggle-text-label">Lihat QRIS</span>
-                                    </button>
-                                @endif
-
-                                {{-- Salin Link Lapak --}}
+                            <div class="flex items-center gap-1">
+                                {{-- Tombol Salin Link Lapak --}}
                                 <button type="button"
                                         onclick="copyShopLink({{ Js::from(route('buyer.shop', $m->slug)) }}, this)"
                                         title="Salin Link Lapak"
@@ -230,9 +221,9 @@
                         </div>
 
                         {{-- Card Middle: Dynamic Holographic Stage --}}
-                        <div class="relative z-10 flex-1 py-3.5 flex flex-col justify-center overflow-hidden">
+                        <div class="relative z-10 flex-1 py-3 flex flex-col justify-center overflow-hidden">
                             
-                            {{-- Panel 1: Info Lapak & Mini Menu (Tampil Default) --}}
+                            {{-- Panel 1: Info Lapak & Mini Menu (Tampil Default, Bersih & Nyaman Dibaca) --}}
                             <div class="shutter-menu-panel space-y-2">
                                 <a href="{{ route('buyer.shop', $m->slug) }}" class="block group/title">
                                     <h3 class="font-black text-lg text-slate-900 group-hover/title:text-blue-600 tracking-tight leading-snug transition-colors line-clamp-1">
@@ -242,7 +233,7 @@
 
                                 @if ($m->location)
                                     <p class="text-[11px] font-semibold text-blue-700 flex items-center gap-1">
-                                        <svg class="size-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
@@ -254,13 +245,13 @@
                                     {{ $m->description ?? 'Lapak resmi mahasiswa kampus IDN.' }}
                                 </p>
 
-                                {{-- Daftar Menu Preview --}}
+                                {{-- Daftar Menu Preview Tanpa Garis Kaku --}}
                                 @if ($m->products->isNotEmpty())
-                                    <div class="pt-2.5 mt-2 border-t border-dashed border-slate-200/80 space-y-1.5">
+                                    <div class="pt-2 mt-1 space-y-1.5">
                                         @foreach ($m->products->take(2) as $prod)
-                                            <div class="flex items-center justify-between text-[11px] bg-slate-50/80 px-2.5 py-1 rounded-lg">
-                                                <span class="text-slate-700 font-medium truncate pr-2">{{ $prod->name }}</span>
-                                                <span class="font-bold text-slate-900 shrink-0">Rp {{ number_format($prod->price, 0, ',', '.') }}</span>
+                                            <div class="flex items-center justify-between text-[11px] bg-slate-50 hover:bg-slate-100/80 px-2.5 py-1.5 rounded-xl border border-slate-100 transition-colors">
+                                                <span class="text-slate-700 font-semibold truncate pr-2">{{ $prod->name }}</span>
+                                                <span class="font-black text-slate-900 shrink-0">Rp {{ number_format($prod->price, 0, ',', '.') }}</span>
                                             </div>
                                         @endforeach
                                     </div>
@@ -271,13 +262,13 @@
                                 </p>
                             </div>
 
-                            {{-- Panel 2: Holographic QRIS Shutter (Meluncur Halus dari Bawah saat Hover/Tap) --}}
+                            {{-- Panel 2: Holographic QRIS Shutter (Khusus Desktop: Meluncur Halus saat Hover) --}}
                             @if ($qrisUrl)
                                 <div onclick="openQrisModal({{ Js::from($m->name) }}, {{ Js::from($qrisUrl) }}, {{ Js::from($waUrl) }}, {{ Js::from($m->location ?? 'Kampus IDN') }}, {{ Js::from($op['label']) }})"
                                      role="button"
                                      tabindex="0"
                                      aria-label="Perbesar QRIS {{ $m->name }}"
-                                     class="shutter-qris-panel absolute inset-0 flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-blue-50/95 via-white to-slate-50 border border-blue-200/80 shadow-inner cursor-pointer group/qr">
+                                     class="shutter-qris-panel absolute inset-0 hidden md:flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-blue-50/95 via-white to-slate-50 border border-blue-200/80 shadow-inner cursor-pointer group/qr">
                                     
                                     {{-- Laser Scanner Shutter Sweep --}}
                                     <div class="pointer-events-none absolute inset-x-3 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_10px_2px_rgba(59,130,246,0.85)] scanner-shutter-beam opacity-0 z-20"></div>
@@ -296,35 +287,41 @@
                                         Klik area ini untuk Perbesar / Unduh
                                     </span>
                                 </div>
-                            @else
-                                <div class="shutter-qris-panel absolute inset-0 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center text-slate-400">
-                                    <span class="text-xs font-bold">QRIS Belum Tersedia</span>
-                                </div>
                             @endif
 
                         </div>
 
-                        {{-- Card Footer: Action Buttons (Selalu Tersedia & Stabil) --}}
-                        <div class="relative z-10 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                            <a href="{{ route('buyer.shop', $m->slug) }}" class="flex-1 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200/80 text-xs font-bold transition text-center">
-                                Menu &rarr;
+                        {{-- Card Footer: Action Buttons (Mobile Friendly & Ergonomis) --}}
+                        <div class="relative z-10 pt-3 border-t border-slate-100 flex items-center gap-2">
+                            {{-- Tombol Utama: Buka Katalog Menu --}}
+                            <a href="{{ route('buyer.shop', $m->slug) }}" 
+                               class="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition text-center shadow-sm shadow-blue-600/20 flex items-center justify-center gap-1">
+                                <span>Lihat Menu</span>
+                                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                                </svg>
                             </a>
                             
+                            {{-- Tombol Aksi Cepat QRIS --}}
                             @if ($qrisUrl)
                                 <button type="button"
                                         onclick="openQrisModal({{ Js::from($m->name) }}, {{ Js::from($qrisUrl) }}, {{ Js::from($waUrl) }}, {{ Js::from($m->location ?? 'Kampus IDN') }}, {{ Js::from($op['label']) }})"
-                                        class="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer text-center">
-                                    Scan QRIS
+                                        title="Buka QRIS {{ $m->name }}"
+                                        aria-label="Buka QRIS {{ $m->name }}"
+                                        class="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 text-xs font-extrabold transition cursor-pointer flex items-center gap-1">
+                                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                    </svg>
+                                    <span>QRIS</span>
                                 </button>
-                            @else
-                                <span class="flex-1 py-2 px-3 rounded-xl bg-slate-100 text-slate-400 text-xs font-bold text-center">
-                                    Tanpa QRIS
-                                </span>
                             @endif
 
+                            {{-- Tombol Aksi Cepat WhatsApp --}}
                             <a href="{{ $waUrl }}" target="_blank" rel="noopener noreferrer"
-                               class="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200/80 text-xs font-bold transition text-center">
-                                Chat WA
+                               title="Chat WhatsApp {{ $m->name }}"
+                               aria-label="Chat WhatsApp {{ $m->name }}"
+                               class="py-2.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 text-xs font-extrabold transition text-center flex items-center justify-center">
+                                💬 WA
                             </a>
                         </div>
                     </article>
@@ -403,17 +400,6 @@
             const modal = document.getElementById('qris-zoom-modal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-        }
-
-        // Toggle QRIS on mobile cards
-        function toggleCardQris(cardId) {
-            const card = document.getElementById(cardId);
-            if (!card) return;
-            const isQrisActive = card.classList.toggle('show-qris-active');
-            const label = card.querySelector('.toggle-text-label');
-            if (label) {
-                label.innerText = isQrisActive ? 'Lihat Menu' : 'Lihat QRIS';
-            }
         }
 
         function copyShopLink(url, btn) {

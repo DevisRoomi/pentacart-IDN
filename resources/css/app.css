@@ -94,70 +94,67 @@
     animation: orbitPulse 8s linear infinite;
 }
 
-/* Awwwards-grade: Holographic Receipt & Shutter Slide Interactive Grid */
-.merchant-bento-grid:hover .merchant-bento-card:not(:hover) {
-    opacity: 0.58;
-    filter: grayscale(12%) blur(0.4px);
-    transform: scale(0.985);
-}
-
+/* Awwwards-grade: Clean Bento Grid (No Dimming / No Blur on Neighbor Cards) */
 .merchant-bento-card {
-    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), 
-                box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1),
-                opacity 240ms ease,
-                filter 240ms ease;
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), 
+                box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 240ms ease;
     will-change: transform, box-shadow;
 }
 
-.merchant-bento-card:hover {
-    transform: translateY(-4px) scale(1.015);
-    box-shadow: 0 20px 35px -10px rgba(30, 58, 138, 0.12), 0 0 0 1px rgba(59, 130, 246, 0.3);
+@media (min-width: 768px) {
+    .merchant-bento-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 32px -8px rgba(37, 99, 235, 0.12), 0 0 0 1.5px rgba(37, 99, 235, 0.35);
+    }
 }
 
 /* Shutter transitions */
 .shutter-menu-panel {
-    transition: opacity 280ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 240ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .shutter-qris-panel {
-    transition: opacity 300ms ease, transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
-    transform: translateY(18px) scale(0.96);
+    transition: opacity 260ms ease, transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(16px) scale(0.96);
     opacity: 0;
     pointer-events: none;
 }
 
-/* On Desktop Hover: slide out menu, slide in QRIS cleanly INSIDE card */
+/* Aktifkan QRIS saat kartu punya class .qris-active (baik via hover desktop maupun toggle) */
+.merchant-bento-card.qris-active .shutter-menu-panel {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+}
+
+.merchant-bento-card.qris-active .shutter-qris-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.merchant-bento-card.qris-active .scanner-shutter-beam {
+    animation: shutterSweep 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Hover desktop: hanya muncul jika kursor masuk ke kartu itu secara sadar */
 @media (min-width: 768px) {
-    .merchant-bento-card:hover .shutter-menu-panel,
-    .merchant-bento-card.show-qris-active .shutter-menu-panel {
+    .merchant-bento-card:hover .shutter-menu-panel {
         opacity: 0;
-        transform: translateY(-12px);
+        transform: translateY(-8px);
         pointer-events: none;
     }
 
-    .merchant-bento-card:hover .shutter-qris-panel,
-    .merchant-bento-card.show-qris-active .shutter-qris-panel {
+    .merchant-bento-card:hover .shutter-qris-panel {
         opacity: 1;
         transform: translateY(0) scale(1);
         pointer-events: auto;
     }
 
     .merchant-bento-card:hover .scanner-shutter-beam {
-        animation: shutterSweep 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        animation: shutterSweep 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
-}
-
-/* Mobile Manual Toggle (State class toggled via JS) */
-.merchant-bento-card.show-qris-active .shutter-menu-panel {
-    opacity: 0;
-    transform: translateY(-12px);
-    pointer-events: none;
-}
-
-.merchant-bento-card.show-qris-active .shutter-qris-panel {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
 }
 
 @keyframes shutterSweep {
