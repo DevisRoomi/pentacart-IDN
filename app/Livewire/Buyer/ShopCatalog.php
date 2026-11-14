@@ -27,8 +27,9 @@ class ShopCatalog extends Component
     public string $dorm_location = '';
     public string $notes = '';
 
-    // Modal QRIS
+    // Modal QRIS & Modal Keranjang / Checkout HP
     public bool $showQrisModal = false;
+    public bool $showMobileCartModal = false;
 
     // Status setelah checkout
     public bool $orderSuccess = false;
@@ -137,6 +138,22 @@ class ShopCatalog extends Component
     public function closeQrisModal(): void
     {
         $this->showQrisModal = false;
+    }
+
+    /**
+     * Buka modal keranjang & checkout di layar HP
+     */
+    public function openMobileCart(): void
+    {
+        $this->showMobileCartModal = true;
+    }
+
+    /**
+     * Tutup modal keranjang & checkout di layar HP
+     */
+    public function closeMobileCart(): void
+    {
+        $this->showMobileCartModal = false;
     }
 
     /**
@@ -290,6 +307,7 @@ class ShopCatalog extends Component
         $this->latestOrderId = $order->id;
         $this->waUrl = $waUrl;
         $this->orderSuccess = true;
+        $this->showMobileCartModal = false;
         $this->cart = [];
 
         // Direct browser redirect ke WhatsApp
@@ -304,6 +322,7 @@ class ShopCatalog extends Component
         $this->orderSuccess = false;
         $this->waUrl = null;
         $this->latestOrderId = null;
+        $this->showMobileCartModal = false;
         $this->cart = [];
     }
 
