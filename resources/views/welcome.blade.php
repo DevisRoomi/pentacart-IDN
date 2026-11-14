@@ -188,6 +188,33 @@
             </div>
         </div>
 
+        {{-- Ruler Tick Meter Indicator (|||||||) di Atas Rel Kartu --}}
+        <div class="hidden md:flex items-center justify-between gap-4 py-2 px-4 mb-2 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-2xs">
+            <div class="flex items-center gap-2 text-[11px] font-black tracking-wide text-slate-700">
+                <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                <span>POSISI REL KATALOG</span>
+            </div>
+
+            {{-- Strip Batang Meteran Ticks (|||||||) --}}
+            <div id="ruler-ticks-container" class="flex-1 flex items-center justify-center gap-2 px-4">
+                @for ($i = 0; $i < $merchants->count(); $i++)
+                    <button type="button"
+                            onclick="jumpToRailIndex({{ $i }})"
+                            aria-label="Lompat ke lapak nomor {{ $i + 1 }}"
+                            title="Lapak {{ $i + 1 }}"
+                            class="ruler-tick-item group/tick flex flex-col items-center py-1 px-1 cursor-pointer">
+                        <span class="ruler-bar block w-1.5 h-5 rounded-full transition-all duration-200 {{ $i === 0 ? 'bg-blue-600 h-7 scale-y-110 shadow-sm shadow-blue-500/50' : 'bg-slate-300 group-hover/tick:bg-slate-500' }}"></span>
+                    </button>
+                @endfor
+            </div>
+
+            <div class="flex items-center gap-2">
+                <span id="ruler-index-badge" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-black tracking-wide shadow-2xs">
+                    01 / {{ sprintf('%02d', $merchants->count()) }}
+                </span>
+            </div>
+        </div>
+
         @if ($merchants->isEmpty())
             <div class="glass-card rounded-3xl p-10 text-center shadow-xs">
                 <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3 font-black text-xl">
@@ -233,7 +260,7 @@
 
                         <article id="card-{{ $m->slug }}"
                                  onmouseenter="playHapticSound('hover')"
-                                 class="merchant-bento-card group/card relative rounded-3xl p-5 bg-white/95 border border-slate-200/80 shadow-md shadow-blue-900/5 flex flex-col justify-between overflow-hidden w-full md:w-[360px] md:shrink-0 md:snap-start md:min-h-[420px] transition-all">
+                                 class="merchant-bento-card group/card relative rounded-3xl p-4 sm:p-5 bg-white/95 border border-slate-200/80 shadow-md shadow-blue-900/5 flex flex-col justify-between overflow-hidden w-full md:w-[305px] lg:w-[320px] md:shrink-0 md:snap-start md:min-h-[415px] transition-all">
                             
                             {{-- Ambient Glass Accent --}}
                             <div class="pointer-events-none absolute -right-12 -top-12 w-36 h-36 rounded-full bg-blue-500/5 blur-2xl group-hover/card:bg-blue-500/10 transition-colors"></div>
@@ -547,11 +574,25 @@
         function scrollRail(direction = 'right') {
             if (!railTrack) return;
             playHapticSound('tick');
-            const scrollDistance = 380;
+            const scrollDistance = 330;
             railTrack.scrollBy({
                 left: direction === 'right' ? scrollDistance : -scrollDistance,
                 behavior: 'smooth'
             });
+        }
+
+        // Lompat langsung ke lapak tertentu via klik meteran tick (|||||||)
+        function jumpToRailIndex(index) {
+            if (!railTrack) return;
+            playHapticSound('tick');
+            const cards = railTrack.querySelectorAll('.merchant-bento-card');
+            if (cards[index]) {
+                cards[index].scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'center'
+                });
+            }
         }
 
         if (railTrack && window.innerWidth >= 768) {
@@ -581,10 +622,11 @@
                     lastPlayedTickPos = railTrack.scrollLeft;
                 }
 
-                // 3D Parallax Tilt Easing pada Tiap Kartu
+                // Update Progress Bar & Real-time 3D Tilt Effect
                 const trackRect = railTrack.getBoundingClientRect();
                 const trackCenter = trackRect.left + trackRect.width / 2;
                 const cards = railTrack.querySelectorAll('.merchant-bento-card');
+                const tickBars = document.querySelectorAll('.ruler-bar');
 
                 let closestIndex = 0;
                 let minDistance = Infinity;
@@ -601,15 +643,29 @@
                     }
 
                     // Formula 3D Timbul (Parallax Depth):
-                    // Kartu tengah: scale 1.02, translateZ(25px), rotateY(0deg)
-                    // Kartu pinggir: sedikit mengecil dan miring natural ke arah tengah
                     const clampedDist = Math.max(-1.5, Math.min(1.5, normalizedDist));
-                    const rotateY = clampedDist * -7; // Derajat miring
-                    const scale = 1 - Math.abs(clampedDist) * 0.035;
-                    const translateZ = Math.max(0, (1 - Math.abs(clampedDist)) * 25);
+                    const rotateY = clampedDist * -6; // Derajat miring
+                    const scale = 1 - Math.abs(clampedDist) * 0.03;
+                    const translateZ = Math.max(0, (1 - Math.abs(clampedDist)) * 20);
 
                     card.style.transform = `scale(${scale.toFixed(3)}) translateZ(${translateZ.toFixed(1)}px) rotateY(${rotateY.toFixed(2)}deg)`;
                 });
+
+                // Update Ruler Ticks (|||||||) Indicator
+                tickBars.forEach((bar, idx) => {
+                    if (idx === closestIndex) {
+                        bar.className = 'ruler-bar block w-2 h-7 rounded-full bg-blue-600 scale-y-110 shadow-sm shadow-blue-500/50 transition-all duration-200';
+                    } else if (Math.abs(idx - closestIndex) === 1) {
+                        bar.className = 'ruler-bar block w-1.5 h-5 rounded-full bg-slate-400 transition-all duration-200';
+                    } else {
+                        bar.className = 'ruler-bar block w-1.5 h-4 rounded-full bg-slate-300 transition-all duration-200';
+                    }
+                });
+
+                const badge = document.getElementById('ruler-index-badge');
+                if (badge) {
+                    badge.innerText = `${String(closestIndex + 1).padStart(2, '0')} / ${String(cards.length).padStart(2, '0')}`;
+                }
 
                 const counterLabel = document.getElementById('rail-counter-label');
                 if (counterLabel) {
