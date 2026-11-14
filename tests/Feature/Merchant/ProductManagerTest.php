@@ -5,6 +5,8 @@ namespace Tests\Feature\Merchant;
 use App\Models\Merchant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -36,7 +38,8 @@ class ProductManagerTest extends TestCase
             ->call('save')
             ->assertHasNoErrors()
             ->assertSee('Nasi Goreng')
-            ->assertSee('Rp15.000');
+            ->assertSee('Rp15.000')
+            ->assertSee('images/product-placeholder.svg');
 
         $this->assertDatabaseHas('products', [
             'merchant_id' => $merchant->id,
@@ -45,6 +48,72 @@ class ProductManagerTest extends TestCase
             'description' => 'Nasi goreng spesial',
             'is_available' => true,
         ]);
+    }
+
+    public function test_merchant_can_create_a_product_with_a_photo_and_preview_it(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+        $merchant = $this->createMerchant($user);
+        $photo = UploadedFile::fake()->image('jajanan.jpg');
+
+        $this->actingAs($user);
+
+        Livewire::test('merchant.product-manager')
+            ->set('name', 'Pisang Goreng')
+            ->set('price', '8000')
+            ->set('photo', $photo)
+            ->assertHasNoErrors()
+            ->assertSee('Preview foto menu')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertDontSee('Preview foto menu');
+
+        $product = $merchant->products()->where('name', 'Pisang Goreng')->firstOrFail();
+
+        $this->assertNotNull($product->image);
+        Storage::disk('public')->assertExists($product->image);
+    }
+
+    public function test_product_photo_must_be_an_allowed_image_format(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+        $this->createMerchant($user);
+
+        $this->actingAs($user);
+
+        Livewire::test('merchant.product-manager')
+            ->set('name', 'Pisang Goreng')
+            ->set('price', '8000')
+            ->set('photo', UploadedFile::fake()->create('menu.gif', 100, 'image/gif'))
+            ->call('save')
+            ->assertHasErrors(['photo'])
+            ->assertSee('Foto menu harus berformat JPG atau PNG.');
+
+        $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_product_photo_must_not_exceed_two_megabytes(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+        $this->createMerchant($user);
+
+        $this->actingAs($user);
+
+        Livewire::test('merchant.product-manager')
+            ->set('name', 'Pisang Goreng')
+            ->set('price', '8000')
+            ->set('photo', UploadedFile::fake()->image('jajanan.png')->size(2049))
+            ->call('save')
+            ->assertHasErrors(['photo' => 'max'])
+            ->assertSee('Ukuran foto menu maksimal 2MB.');
+
+        $this->assertDatabaseCount('products', 0);
     }
 
     public function test_merchant_can_update_their_product_price(): void
@@ -144,11 +213,16 @@ class ProductManagerTest extends TestCase
 
     public function test_merchant_can_delete_their_product(): void
     {
+        Storage::fake('public');
+
         $user = User::factory()->create();
         $merchant = $this->createMerchant($user);
+        $imagePath = 'products/es-teh.jpg';
+        Storage::disk('public')->put($imagePath, 'fake image');
         $product = $merchant->products()->create([
             'name' => 'Es Teh',
             'price' => 5000,
+            'image' => $imagePath,
         ]);
 
         $this->actingAs($user);
@@ -158,6 +232,7 @@ class ProductManagerTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertDatabaseMissing('products', ['id' => $product->id]);
+        Storage::disk('public')->assertMissing($imagePath);
     }
 
     public function test_merchant_cannot_delete_another_merchants_product(): void

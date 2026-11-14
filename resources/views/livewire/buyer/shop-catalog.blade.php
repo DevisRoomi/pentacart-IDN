@@ -148,12 +148,13 @@
                                     @if ($product->image)
                                         <img src="{{ asset('storage/' . $product->image) }}"
                                             alt="{{ $product->name }}"
+                                            loading="lazy"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                                     @else
-                                        <div class="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-gradient-to-tr from-slate-50 to-blue-50/50">
-                                            <span class="text-3xl">🥟</span>
-                                            <span class="text-[10px] font-semibold text-slate-400 mt-1">PentaCart Menu</span>
-                                        </div>
+                                        <img src="{{ asset('images/product-placeholder.svg') }}"
+                                            alt="Ilustrasi menu {{ $product->name }}"
+                                            loading="lazy"
+                                            class="w-full h-full object-cover">
                                     @endif
 
                                     {{-- Badge Status Stok --}}
