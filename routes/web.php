@@ -5,6 +5,7 @@ use App\Livewire\Auth\Register;
 use App\Livewire\Buyer\ShopCatalog;
 use App\Livewire\Merchant\OrderHistory;
 use App\Livewire\Merchant\ProfileSettings;
+use App\Models\ImageBlob;
 use App\Models\Merchant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,9 +17,14 @@ Route::get('/', function (Request $request) {
     $openOnly = $request->boolean('open_only');
 
     $merchants = Merchant::query()
-        ->with(['products' => function ($q) {
-            $q->where('is_available', true)->latest();
-        }])
+        ->with([
+            'qrisImageBlob:id,merchant_id,content_hash',
+            'products' => function ($q) {
+                $q->where('is_available', true)
+                    ->with('imageBlob:id,product_id,content_hash')
+                    ->latest();
+            },
+        ])
         ->withCount(['products' => function ($q) {
             $q->where('is_available', true);
         }])
@@ -35,6 +41,20 @@ Route::get('/', function (Request $request) {
 
     return view('welcome', compact('merchants', 'search', 'openOnly'));
 })->name('home');
+
+Route::get('/images/{imageBlob}', function (Request $request, ImageBlob $imageBlob) {
+    $version = $request->query('v');
+
+    abort_unless(is_string($version) && hash_equals($imageBlob->content_hash, $version), 404);
+    abort_unless(in_array($imageBlob->mime_type, ['image/jpeg', 'image/png', 'image/webp'], true), 404);
+
+    return response($imageBlob->content)
+        ->header('Content-Type', $imageBlob->mime_type)
+        ->header('Content-Disposition', 'inline')
+        ->header('Cache-Control', 'public, max-age=31536000, immutable')
+        ->header('ETag', '"'.$imageBlob->content_hash.'"')
+        ->header('X-Content-Type-Options', 'nosniff');
+})->whereNumber('imageBlob')->name('images.show');
 
 // Buyer Public Catalog & Order Flow (Fitur Apip)
 Route::get('/lapak/{merchant:slug}', ShopCatalog::class)->name('buyer.shop');

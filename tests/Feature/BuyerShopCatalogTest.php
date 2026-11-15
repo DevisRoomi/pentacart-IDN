@@ -112,11 +112,18 @@ class BuyerShopCatalogTest extends TestCase
 
     public function test_buyer_can_toggle_qris_modal(): void
     {
+        $imageBlob = $this->merchant->qrisImageBlob()->create([
+            'mime_type' => 'image/png',
+            'content_hash' => str_repeat('c', 64),
+            'content' => 'qris image bytes',
+        ]);
+
         Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
             ->assertSet('showQrisModal', false)
             ->call('openQrisModal')
             ->assertSet('showQrisModal', true)
             ->assertSee('QRIS Pembayaran Lapak')
+            ->assertSee($imageBlob->url())
             ->call('closeQrisModal')
             ->assertSet('showQrisModal', false);
     }
@@ -244,6 +251,18 @@ class BuyerShopCatalogTest extends TestCase
         Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
             ->assertSee('Dimsum Mentai Spesial')
             ->assertSee(asset('storage/products/dimsum-mentai.jpg'));
+    }
+
+    public function test_displays_database_stored_product_image_when_available(): void
+    {
+        $imageBlob = $this->productA->imageBlob()->create([
+            'mime_type' => 'image/png',
+            'content_hash' => str_repeat('b', 64),
+            'content' => 'image bytes',
+        ]);
+
+        Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
+            ->assertSee($imageBlob->url());
     }
 
     public function test_displays_food_illustration_placeholder_when_product_has_no_image(): void

@@ -1,25 +1,26 @@
 <?php
 
 use App\Models\Merchant;
+use App\Support\ImageDataUrl;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 new #[Title('Kelola Menu - PentaCart IDN')] class extends Component
 {
-    use WithFileUploads;
-
     public string $name = '';
 
     public string $price = '';
 
     public string $description = '';
 
-    public $photo = null;
+    public ?string $photoData = null;
+
+    public int $photoInputVersion = 0;
 
     public bool $is_available = true;
 
@@ -34,7 +35,7 @@ new #[Title('Kelola Menu - PentaCart IDN')] class extends Component
             'price' => ['required', 'integer', 'min:1', 'max:4294967295'],
             'description' => ['nullable', 'string', 'max:1000'],
             'is_available' => ['required', 'boolean'],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'photoData' => ['nullable', 'string', 'max:'.ImageDataUrl::MAX_DATA_URL_CHARACTERS],
         ];
     }
 
@@ -48,9 +49,7 @@ new #[Title('Kelola Menu - PentaCart IDN')] class extends Component
             'price.min' => 'Harga minimal Rp1.',
             'price.max' => 'Harga terlalu besar.',
             'description.max' => 'Deskripsi maksimal 1000 karakter.',
-            'photo.image' => 'Foto menu harus berupa gambar.',
-            'photo.mimes' => 'Foto menu harus berformat JPG atau PNG.',
-            'photo.max' => 'Ukuran foto menu maksimal 2MB.',
+            'photoData.max' => 'Ukuran foto menu maksimal 2MB.',
             'editingPrice.required' => 'Harga wajib diisi.',
             'editingPrice.integer' => 'Harga harus berupa angka bulat.',
             'editingPrice.min' => 'Harga minimal Rp1.',
@@ -61,27 +60,46 @@ new #[Title('Kelola Menu - PentaCart IDN')] class extends Component
     #[Computed]
     public function products(): Collection
     {
-        return $this->merchant()->products()->latest()->get();
+        return $this->merchant()
+            ->products()
+            ->with('imageBlob:id,product_id,content_hash')
+            ->latest()
+            ->get();
     }
 
     public function save(): void
     {
         $validated = $this->validate();
 
-        $imagePath = $this->photo?->store('products', 'public');
+        $image = $this->photoData === null
+            ? null
+            : ImageDataUrl::parse($this->photoData, ['image/jpeg', 'image/png']);
 
-        if ($this->photo && ! is_string($imagePath)) {
-            $this->addError('photo', 'Foto menu gagal disimpan. Silakan coba lagi.');
+        if ($this->photoData !== null && $image === null) {
+            $this->addError('photoData', 'Foto menu harus berformat JPG atau PNG.');
 
             return;
         }
 
-        unset($validated['photo']);
-        $validated['image'] = $imagePath;
+        unset($validated['photoData']);
+        $validated['image'] = null;
 
-        $this->merchant()->products()->create($validated);
+        $merchant = $this->merchant();
 
-        $this->reset('name', 'price', 'description', 'is_available', 'photo');
+        DB::transaction(function () use ($merchant, $validated, $image) {
+            $product = $merchant->products()->create($validated);
+
+            if ($image !== null) {
+                $product->imageBlob()->create([
+                    'mime_type' => $image->mimeType,
+                    'content_hash' => $image->contentHash,
+                    'content' => $image->content,
+                ]);
+            }
+        });
+
+        $this->reset('name', 'price', 'description', 'is_available', 'photoData');
+        $this->photoInputVersion++;
         session()->flash('status', 'Menu berhasil disimpan.');
     }
 
@@ -166,7 +184,50 @@ new #[Title('Kelola Menu - PentaCart IDN')] class extends Component
             </div>
         @endif
 
-        <form wire:submit="save" class="space-y-4">
+        <form wire:key="product-form-{{ $photoInputVersion }}" wire:submit="save" class="space-y-4"
+            x-data="{
+                previewUrl: null,
+                reading: false,
+                fileError: '',
+                readPhoto(event) {
+                    const file = event.target.files[0];
+                    this.fileError = '';
+
+                    if (!file) return;
+
+                    this.previewUrl = null;
+                    $wire.photoData = null;
+
+                    if (file.size > 2097152) {
+                        this.fileError = 'Ukuran foto menu maksimal 2MB.';
+                        event.target.value = '';
+                        return;
+                    }
+
+                    this.reading = true;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        this.reading = false;
+
+                        if (typeof reader.result !== 'string') {
+                            this.fileError = 'Foto menu gagal dibaca. Silakan coba lagi.';
+                            $wire.photoData = null;
+                            event.target.value = '';
+                            return;
+                        }
+
+                        this.previewUrl = reader.result;
+                        $wire.photoData = reader.result;
+                    };
+                    reader.onerror = () => {
+                        this.reading = false;
+                        this.fileError = 'Foto menu gagal dibaca. Silakan coba lagi.';
+                        $wire.photoData = null;
+                        event.target.value = '';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }">
             <div>
                 <label for="product-name" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Menu</label>
                 <input id="product-name" type="text" wire:model="name" maxlength="255"
@@ -190,17 +251,21 @@ new #[Title('Kelola Menu - PentaCart IDN')] class extends Component
 
             <div>
                 <label for="product-photo" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Foto Menu</label>
-                <input id="product-photo" type="file" wire:model="photo" accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                    class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition">
+                <div>
+                    <input id="product-photo" type="file" x-on:change="readPhoto($event)" accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                        x-bind:disabled="reading"
+                        class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition">
+                    <div x-show="reading" class="mt-2 text-xs font-semibold text-blue-600">Memproses foto...</div>
+                    <p x-show="fileError" x-text="fileError" class="text-[11px] text-rose-500 font-medium mt-1 block"></p>
+                    <template x-if="previewUrl">
+                        <div class="mt-3">
+                            <img x-bind:src="previewUrl" alt="Preview foto menu"
+                                class="h-36 w-full max-w-xs rounded-xl border border-slate-200 object-cover">
+                        </div>
+                    </template>
+                </div>
                 <p class="mt-1 text-xs text-slate-500">Format JPG atau PNG, maksimal 2MB.</p>
-                @error('photo') <span class="text-[11px] text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
-                <div wire:loading wire:target="photo" class="mt-2 text-xs font-semibold text-blue-600">Mengunggah foto...</div>
-                @if ($photo && $photo->isPreviewable())
-                    <div class="mt-3">
-                        <img src="{{ $photo->temporaryUrl() }}" alt="Preview foto menu"
-                            class="h-36 w-full max-w-xs rounded-xl border border-slate-200 object-cover">
-                    </div>
-                @endif
+                @error('photoData') <span class="text-[11px] text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
             </div>
 
             <label for="product-available" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
@@ -210,6 +275,7 @@ new #[Title('Kelola Menu - PentaCart IDN')] class extends Component
             </label>
 
             <button type="submit"
+                x-bind:disabled="reading"
                 class="w-full sm:w-auto py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-600/30 transition cursor-pointer disabled:opacity-50">
                 <span wire:loading.remove wire:target="save">Simpan Menu</span>
                 <span wire:loading wire:target="save">Menyimpan...</span>
@@ -225,7 +291,7 @@ new #[Title('Kelola Menu - PentaCart IDN')] class extends Component
 
         @forelse ($this->products as $product)
             <article wire:key="product-{{ $product->id }}" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-slate-100 last:border-b-0">
-                <img src="{{ $product->image ? \Illuminate\Support\Facades\Storage::disk('public')->url($product->image) : asset('images/product-placeholder.svg') }}"
+                <img src="{{ $product->imageUrl() ?? asset('images/product-placeholder.svg') }}"
                     alt="{{ $product->name }}" class="h-20 w-20 shrink-0 rounded-xl border border-slate-200 object-cover">
                 <div class="min-w-0">
                     <h3 class="font-bold text-slate-900">{{ $product->name }}</h3>

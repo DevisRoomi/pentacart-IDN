@@ -202,7 +202,7 @@
 
                         @php
                             $op = $m->operationalStatus();
-                            $qrisUrl = $m->qris_image ? \Illuminate\Support\Facades\Storage::disk('public')->url($m->qris_image) : null;
+                            $qrisUrl = $m->qrisImageUrl();
                             $waChatText = rawurlencode("Halo {$m->name}, saya lihat lapaknya di PentaCart IDN. Mau tanya / pesan ya!");
                             $waUrl = 'https://wa.me/' . preg_replace('/[^0-9]/', '', $m->phone) . '?text=' . $waChatText;
                         @endphp

@@ -75,6 +75,8 @@ class ShopCatalog extends Component
         } else {
             $this->merchant = Merchant::where('is_open', true)->first() ?? Merchant::firstOrFail();
         }
+
+        $this->merchant->load('qrisImageBlob:id,merchant_id,content_hash');
     }
 
     /**
@@ -219,6 +221,7 @@ class ShopCatalog extends Component
     public function products()
     {
         return Product::where('merchant_id', $this->merchant->id)
+            ->with('imageBlob:id,product_id,content_hash')
             ->when(trim($this->search) !== '', function ($q) {
                 $searchTerm = '%'.trim($this->search).'%';
                 $q->where(function ($sub) use ($searchTerm) {

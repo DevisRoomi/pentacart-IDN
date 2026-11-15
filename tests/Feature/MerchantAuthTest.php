@@ -9,7 +9,6 @@ use App\Models\Merchant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -62,8 +61,6 @@ class MerchantAuthTest extends TestCase
 
     public function test_merchant_can_update_profile_and_toggle_status(): void
     {
-        Storage::fake('public');
-
         $user = User::factory()->create();
         $merchant = Merchant::create([
             'user_id' => $user->id,
@@ -76,22 +73,32 @@ class MerchantAuthTest extends TestCase
         $this->actingAs($user);
 
         $fakeQris = UploadedFile::fake()->image('qris.png');
+        $qrisBytes = file_get_contents($fakeQris->getRealPath());
+        $qrisDataUrl = 'data:image/png;base64,'.base64_encode($qrisBytes);
 
         Livewire::test(ProfileSettings::class)
             ->set('name', 'Lapak Baru Sukses')
             ->set('phone', '085555555555')
             ->set('location', 'Gedung Ali Lt. 1')
             ->set('description', 'Kantin aneka cemilan')
-            ->set('new_qris', $fakeQris)
+            ->set('new_qris_data', $qrisDataUrl)
             ->call('updateProfile')
             ->assertHasNoErrors();
 
         $merchant->refresh();
-        $this->assertEquals('Lapak Baru Sukses', $merchant->name);
-        $this->assertEquals('6285555555555', $merchant->phone);
-        $this->assertEquals('Gedung Ali Lt. 1', $merchant->location);
-        $this->assertNotNull($merchant->qris_image);
-        Storage::disk('public')->assertExists($merchant->qris_image);
+        $imageBlob = $merchant->qrisImageBlob()->firstOrFail();
+        $this->assertSame('Lapak Baru Sukses', $merchant->name);
+        $this->assertSame('6285555555555', $merchant->phone);
+        $this->assertSame('Gedung Ali Lt. 1', $merchant->location);
+        $this->assertNull($merchant->qris_image);
+        $this->assertSame('image/png', $imageBlob->mime_type);
+        $this->assertSame(hash('sha256', $qrisBytes), $imageBlob->content_hash);
+
+        $response = $this->get($merchant->qrisImageUrl())
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png');
+
+        $this->assertSame($qrisBytes, $response->getContent());
 
         // Test toggle open/closed
         Livewire::test(ProfileSettings::class)
@@ -99,6 +106,32 @@ class MerchantAuthTest extends TestCase
 
         $merchant->refresh();
         $this->assertFalse($merchant->is_open);
+    }
+
+    public function test_merchant_cannot_save_an_invalid_qris_image(): void
+    {
+        $user = User::factory()->create();
+        $merchant = Merchant::create([
+            'user_id' => $user->id,
+            'name' => 'Lapak Lama',
+            'slug' => 'lapak-lama',
+            'phone' => '628111111111',
+            'is_open' => true,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(ProfileSettings::class)
+            ->set('new_qris_data', 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=')
+            ->call('updateProfile')
+            ->assertHasErrors(['new_qris_data'])
+            ->assertSee('File QRIS harus berupa gambar (JPG, PNG, WEBP).');
+
+        $this->assertDatabaseHas('merchants', [
+            'id' => $merchant->id,
+            'name' => 'Lapak Lama',
+        ]);
+        $this->assertDatabaseCount('image_blobs', 0);
     }
 
     public function test_merchant_can_set_preset_and_custom_keywords_and_scope_search_works(): void
