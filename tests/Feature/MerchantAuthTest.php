@@ -93,6 +93,9 @@ class MerchantAuthTest extends TestCase
         $this->assertNull($merchant->qris_image);
         $this->assertSame('image/png', $imageBlob->mime_type);
         $this->assertSame(hash('sha256', $qrisBytes), $imageBlob->content_hash);
+        $this->assertSame($qrisBytes, $imageBlob->content);
+        // A bytea stream must remain readable after the first access.
+        $this->assertSame($qrisBytes, $imageBlob->content);
 
         $response = $this->get($merchant->qrisImageUrl())
             ->assertOk()
