@@ -188,15 +188,8 @@
                             }
 
                             // Normalisasi URL foto menu
-                            $hasValidImage = !empty($product->image);
-                            $productImageUrl = null;
-                            if ($hasValidImage) {
-                                if (str_starts_with($product->image, 'http://') || str_starts_with($product->image, 'https://')) {
-                                    $productImageUrl = $product->image;
-                                } else {
-                                    $productImageUrl = asset('storage/' . $product->image);
-                                }
-                            }
+                            $productImageUrl = $product->imageUrl();
+                            $hasValidImage = $productImageUrl !== null;
                         @endphp
 
                         <div class="glass-card rounded-2xl p-4 shadow-xs hover:shadow-md transition flex flex-col justify-between border border-slate-200/80 group">
@@ -786,12 +779,12 @@
                 <div class="overflow-y-auto flex-1 p-4 sm:p-6 space-y-4 text-center">
                     {{-- Gambar QRIS Toko --}}
                     <div class="p-3 sm:p-4 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center">
-                        @if ($merchant->qris_image)
-                            <img src="{{ asset('storage/' . $merchant->qris_image) }}"
+                        @if ($merchant->qrisImageUrl())
+                            <img src="{{ $merchant->qrisImageUrl() }}"
                                 alt="QRIS {{ $merchant->name }}"
                                 class="w-full max-w-[260px] sm:max-w-[280px] max-h-[300px] object-contain rounded-xl bg-white p-2 shadow-xs border border-slate-200">
                             
-                            <a href="{{ asset('storage/' . $merchant->qris_image) }}" download
+                            <a href="{{ $merchant->qrisImageUrl() }}" download
                                 class="mt-2.5 text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
                                 <span>Unduh Gambar QRIS</span>
                             </a>

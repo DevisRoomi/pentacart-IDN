@@ -4,6 +4,7 @@ namespace Tests\Feature\Merchant;
 
 use App\Models\Merchant;
 use App\Models\User;
+use App\Support\ImageDataUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -50,47 +51,53 @@ class ProductManagerTest extends TestCase
         ]);
     }
 
-    public function test_merchant_can_create_a_product_with_a_photo_and_preview_it(): void
+    public function test_merchant_can_create_a_product_with_a_photo_saved_in_database(): void
     {
-        Storage::fake('public');
-
         $user = User::factory()->create();
         $merchant = $this->createMerchant($user);
-        $photo = UploadedFile::fake()->image('jajanan.jpg');
+        $photo = UploadedFile::fake()->image('jajanan.png');
+        $photoBytes = file_get_contents($photo->getRealPath());
+        $photoDataUrl = 'data:image/png;base64,'.base64_encode($photoBytes);
 
         $this->actingAs($user);
 
         Livewire::test('merchant.product-manager')
             ->set('name', 'Pisang Goreng')
             ->set('price', '8000')
-            ->set('photo', $photo)
-            ->assertHasNoErrors()
-            ->assertSee('Preview foto menu')
+            ->set('photoData', $photoDataUrl)
             ->call('save')
-            ->assertHasNoErrors()
-            ->assertDontSee('Preview foto menu');
+            ->assertHasNoErrors();
 
         $product = $merchant->products()->where('name', 'Pisang Goreng')->firstOrFail();
+        $imageBlob = $product->imageBlob()->firstOrFail();
 
-        $this->assertNotNull($product->image);
-        Storage::disk('public')->assertExists($product->image);
+        $this->assertNull($product->image);
+        $this->assertSame('image/png', $imageBlob->mime_type);
+        $this->assertSame(hash('sha256', $photoBytes), $imageBlob->content_hash);
+
+        $response = $this->get($imageBlob->url())
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png')
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+        $this->assertSame($photoBytes, $response->getContent());
     }
 
     public function test_product_photo_must_be_an_allowed_image_format(): void
     {
-        Storage::fake('public');
-
         $user = User::factory()->create();
         $this->createMerchant($user);
+        $photo = UploadedFile::fake()->create('menu.gif', 100, 'image/gif');
+        $photoDataUrl = 'data:image/gif;base64,'.base64_encode(file_get_contents($photo->getRealPath()));
 
         $this->actingAs($user);
 
         Livewire::test('merchant.product-manager')
             ->set('name', 'Pisang Goreng')
             ->set('price', '8000')
-            ->set('photo', UploadedFile::fake()->create('menu.gif', 100, 'image/gif'))
+            ->set('photoData', $photoDataUrl)
             ->call('save')
-            ->assertHasErrors(['photo'])
+            ->assertHasErrors(['photoData'])
             ->assertSee('Foto menu harus berformat JPG atau PNG.');
 
         $this->assertDatabaseCount('products', 0);
@@ -98,8 +105,6 @@ class ProductManagerTest extends TestCase
 
     public function test_product_photo_must_not_exceed_two_megabytes(): void
     {
-        Storage::fake('public');
-
         $user = User::factory()->create();
         $this->createMerchant($user);
 
@@ -108,12 +113,76 @@ class ProductManagerTest extends TestCase
         Livewire::test('merchant.product-manager')
             ->set('name', 'Pisang Goreng')
             ->set('price', '8000')
-            ->set('photo', UploadedFile::fake()->image('jajanan.png')->size(2049))
+            ->set('photoData', 'data:image/png;base64,'.str_repeat('A', 2_800_000))
             ->call('save')
-            ->assertHasErrors(['photo' => 'max'])
+            ->assertHasErrors(['photoData' => 'max'])
             ->assertSee('Ukuran foto menu maksimal 2MB.');
 
         $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_product_photo_cannot_exceed_the_decoded_two_megabyte_limit(): void
+    {
+        $user = User::factory()->create();
+        $this->createMerchant($user);
+        $photo = UploadedFile::fake()->image('menu.png', 1, 1);
+        $photoBytes = file_get_contents($photo->getRealPath());
+        $oversizedBytes = str_pad($photoBytes, ImageDataUrl::MAX_BYTES + 1, "\0");
+
+        $this->actingAs($user);
+
+        Livewire::test('merchant.product-manager')
+            ->set('name', 'Pisang Goreng')
+            ->set('price', '8000')
+            ->set('photoData', 'data:image/png;base64,'.base64_encode($oversizedBytes))
+            ->call('save')
+            ->assertHasErrors(['photoData'])
+            ->assertSee('Foto menu harus berformat JPG atau PNG.');
+
+        $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_product_photo_cannot_exceed_maximum_dimensions(): void
+    {
+        $user = User::factory()->create();
+        $this->createMerchant($user);
+        $photo = UploadedFile::fake()->image('menu.png', 8193, 1);
+        $photoDataUrl = 'data:image/png;base64,'.base64_encode(file_get_contents($photo->getRealPath()));
+
+        $this->actingAs($user);
+
+        Livewire::test('merchant.product-manager')
+            ->set('name', 'Pisang Goreng')
+            ->set('price', '8000')
+            ->set('photoData', $photoDataUrl)
+            ->call('save')
+            ->assertHasErrors(['photoData'])
+            ->assertSee('Foto menu harus berformat JPG atau PNG.');
+
+        $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_old_image_url_is_rejected_after_its_content_changes(): void
+    {
+        $user = User::factory()->create();
+        $merchant = $this->createMerchant($user);
+        $product = $merchant->products()->create([
+            'name' => 'Es Teh',
+            'price' => 5000,
+        ]);
+        $imageBlob = $product->imageBlob()->create([
+            'mime_type' => 'image/png',
+            'content_hash' => str_repeat('a', 64),
+            'content' => 'old image bytes',
+        ]);
+        $oldUrl = $imageBlob->url();
+
+        $imageBlob->update([
+            'content_hash' => str_repeat('b', 64),
+            'content' => 'new image bytes',
+        ]);
+
+        $this->get($oldUrl)->assertNotFound();
     }
 
     public function test_merchant_can_update_their_product_price(): void
@@ -224,6 +293,11 @@ class ProductManagerTest extends TestCase
             'price' => 5000,
             'image' => $imagePath,
         ]);
+        $imageBlob = $product->imageBlob()->create([
+            'mime_type' => 'image/png',
+            'content_hash' => str_repeat('a', 64),
+            'content' => 'image bytes',
+        ]);
 
         $this->actingAs($user);
 
@@ -232,6 +306,7 @@ class ProductManagerTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertDatabaseMissing('products', ['id' => $product->id]);
+        $this->assertDatabaseMissing('image_blobs', ['id' => $imageBlob->id]);
         Storage::disk('public')->assertMissing($imagePath);
     }
 

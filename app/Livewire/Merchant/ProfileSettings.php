@@ -3,18 +3,16 @@
 namespace App\Livewire\Merchant;
 
 use App\Models\Merchant;
+use App\Support\ImageDataUrl;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 #[Title('Pengaturan Lapak & QRIS - PentaCart IDN')]
 class ProfileSettings extends Component
 {
-    use WithFileUploads;
-
     public Merchant $merchant;
 
     public string $name = '';
@@ -35,7 +33,9 @@ class ProfileSettings extends Component
         'Kuliner Malam',
     ];
 
-    public $new_qris = null;
+    public ?string $new_qris_data = null;
+
+    public int $qrisInputVersion = 0;
 
     protected function rules(): array
     {
@@ -48,7 +48,7 @@ class ProfileSettings extends Component
             'sessions' => 'array|max:4',
             'sessions.*.start' => 'required_with:sessions.*.end|date_format:H:i',
             'sessions.*.end' => 'required_with:sessions.*.start|date_format:H:i|after:sessions.*.start',
-            'new_qris' => 'nullable|image|max:2048', // max 2MB
+            'new_qris_data' => ['nullable', 'string', 'max:'.ImageDataUrl::MAX_DATA_URL_CHARACTERS],
         ];
     }
 
@@ -61,8 +61,7 @@ class ProfileSettings extends Component
             'sessions.*.start.date_format' => 'Format jam mulai harus JJ:MM.',
             'sessions.*.end.date_format' => 'Format jam selesai harus JJ:MM.',
             'sessions.*.end.after' => 'Jam tutup harus lebih besar dari jam buka.',
-            'new_qris.image' => 'File QRIS harus berupa gambar (JPG, PNG, WEBP).',
-            'new_qris.max' => 'Ukuran gambar QRIS maksimal 2MB.',
+            'new_qris_data.max' => 'Ukuran gambar QRIS maksimal 2MB.',
         ];
     }
 
@@ -86,6 +85,7 @@ class ProfileSettings extends Component
         }
 
         $this->merchant = $merchant;
+        $this->merchant->load('qrisImageBlob:id,merchant_id,content_hash');
         $this->name = $merchant->name;
         $this->phone = $merchant->phone;
         $this->location = $merchant->location ?? '';
@@ -144,6 +144,16 @@ class ProfileSettings extends Component
     {
         $this->validate();
 
+        $newQris = $this->new_qris_data === null
+            ? null
+            : ImageDataUrl::parse($this->new_qris_data, ['image/jpeg', 'image/png', 'image/webp']);
+
+        if ($this->new_qris_data !== null && $newQris === null) {
+            $this->addError('new_qris_data', 'File QRIS harus berupa gambar (JPG, PNG, WEBP).');
+
+            return;
+        }
+
         // Normalisasi format nomor WA jadi format 62...
         $cleanPhone = preg_replace('/[^0-9]/', '', $this->phone);
         if (str_starts_with($cleanPhone, '0')) {
@@ -166,20 +176,29 @@ class ProfileSettings extends Component
             'schedule' => empty($cleanSchedule) ? null : $cleanSchedule,
         ];
 
-        // Jika upload QRIS baru
-        if ($this->new_qris) {
-            // Hapus QRIS lama jika ada
-            if ($this->merchant->qris_image && Storage::disk('public')->exists($this->merchant->qris_image)) {
-                Storage::disk('public')->delete($this->merchant->qris_image);
-            }
-
-            $path = $this->new_qris->store('qris-images', 'public');
-            $data['qris_image'] = $path;
-            $this->new_qris = null;
+        if ($newQris !== null) {
+            $data['qris_image'] = null;
         }
 
-        $this->merchant->update($data);
+        DB::transaction(function () use ($data, $newQris) {
+            $this->merchant->update($data);
+
+            if ($newQris !== null) {
+                $this->merchant->qrisImageBlob()->updateOrCreate([], [
+                    'mime_type' => $newQris->mimeType,
+                    'content_hash' => $newQris->contentHash,
+                    'content' => $newQris->content,
+                ]);
+            }
+        });
+
         $this->merchant->refresh();
+        $this->merchant->unsetRelation('qrisImageBlob');
+
+        if ($newQris !== null) {
+            $this->reset('new_qris_data');
+            $this->qrisInputVersion++;
+        }
 
         session()->flash('status', 'Profil lapak dan QRIS berhasil diperbarui!');
     }

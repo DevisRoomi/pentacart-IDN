@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 class Merchant extends Model
 {
@@ -100,21 +102,21 @@ class Merchant extends Model
             return $query;
         }
 
-        $like = '%' . $term . '%';
+        $like = '%'.$term.'%';
 
         return $query->where(function (Builder $q) use ($like) {
-            $q->where('name', 'like', $like)
-                ->orWhere('description', 'like', $like)
-                ->orWhere('keywords', 'like', $like)
-                ->orWhere('location', 'like', $like)
+            $q->whereLike('name', $like)
+                ->orWhereLike('description', $like)
+                ->orWhereLike('keywords', $like)
+                ->orWhereLike('location', $like)
                 ->orWhereHas('user', function (Builder $uq) use ($like) {
-                    $uq->where('name', 'like', $like);
+                    $uq->whereLike('name', $like);
                 })
                 ->orWhereHas('products', function (Builder $pq) use ($like) {
                     $pq->where('is_available', true)
                         ->where(function (Builder $inner) use ($like) {
-                            $inner->where('name', 'like', $like)
-                                ->orWhere('description', 'like', $like);
+                            $inner->whereLike('name', $like)
+                                ->orWhereLike('description', $like);
                         });
                 });
         });
@@ -128,6 +130,32 @@ class Merchant extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function qrisImageBlob(): HasOne
+    {
+        return $this->hasOne(ImageBlob::class);
+    }
+
+    public function qrisImageUrl(): ?string
+    {
+        $imageBlob = $this->relationLoaded('qrisImageBlob')
+            ? $this->getRelation('qrisImageBlob')
+            : $this->qrisImageBlob()->first(['id', 'merchant_id', 'content_hash']);
+
+        if ($imageBlob) {
+            return $imageBlob->url();
+        }
+
+        if (! $this->qris_image) {
+            return null;
+        }
+
+        if (str_starts_with($this->qris_image, 'http://') || str_starts_with($this->qris_image, 'https://')) {
+            return $this->qris_image;
+        }
+
+        return Storage::disk('public')->url($this->qris_image);
     }
 
     public function orders(): HasMany

@@ -13,7 +13,9 @@ use Livewire\Component;
 class OrderHistory extends Component
 {
     public Merchant $merchant;
+
     public string $search = '';
+
     public string $dateFilter = 'all'; // 'today' | 'all'
 
     public function mount(): void
@@ -24,8 +26,8 @@ class OrderHistory extends Component
         if (! $merchant) {
             $merchant = Merchant::create([
                 'user_id' => $user->id,
-                'name' => $user->name . ' Shop',
-                'slug' => Str::slug($user->name . '-' . $user->id),
+                'name' => $user->name.' Shop',
+                'slug' => Str::slug($user->name.'-'.$user->id),
                 'phone' => '6281234567890',
                 'is_open' => true,
             ]);
@@ -42,7 +44,7 @@ class OrderHistory extends Component
 
         $cleanPhone = preg_replace('/[^0-9]/', '', $order->buyer_phone);
         if (str_starts_with($cleanPhone, '0')) {
-            $cleanPhone = '62' . substr($cleanPhone, 1);
+            $cleanPhone = '62'.substr($cleanPhone, 1);
         }
 
         if ($cleanPhone === '') {
@@ -51,7 +53,7 @@ class OrderHistory extends Component
 
         $message = "Halo {$order->buyer_name}, pesananmu ({$order->order_items}) sudah kami terima dan sedang diproses untuk diantar ke {$order->dorm_location}. Mohon ditunggu ya!";
 
-        return 'https://wa.me/' . $cleanPhone . '?text=' . rawurlencode($message);
+        return 'https://wa.me/'.$cleanPhone.'?text='.rawurlencode($message);
     }
 
     public function render()
@@ -59,15 +61,20 @@ class OrderHistory extends Component
         $query = $this->merchant->orders()->latest('ordered_at');
 
         if ($this->dateFilter === 'today') {
-            $query->whereDate('ordered_at', now()->timezone('Asia/Jakarta')->toDateString());
+            $today = now('Asia/Jakarta');
+
+            $query->whereBetween('ordered_at', [
+                $today->copy()->startOfDay()->utc(),
+                $today->copy()->endOfDay()->utc(),
+            ]);
         }
 
         if (trim($this->search) !== '') {
-            $term = '%' . trim($this->search) . '%';
+            $term = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($term) {
-                $q->where('buyer_name', 'like', $term)
-                    ->orWhere('dorm_location', 'like', $term)
-                    ->orWhere('order_items', 'like', $term);
+                $q->whereLike('buyer_name', $term)
+                    ->orWhereLike('dorm_location', $term)
+                    ->orWhereLike('order_items', $term);
             });
         }
 

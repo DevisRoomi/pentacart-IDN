@@ -34,7 +34,51 @@
     @endif
 
     {{-- Main Grid Form --}}
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div wire:key="profile-content-{{ $qrisInputVersion }}"
+        x-data="{
+            previewUrl: null,
+            reading: false,
+            fileError: '',
+            readQris(event) {
+                const file = event.target.files[0];
+                this.fileError = '';
+
+                if (!file) return;
+
+                this.previewUrl = null;
+                $wire.new_qris_data = null;
+
+                if (file.size > 2097152) {
+                    this.fileError = 'Ukuran gambar QRIS maksimal 2MB.';
+                    event.target.value = '';
+                    return;
+                }
+
+                this.reading = true;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    this.reading = false;
+
+                    if (typeof reader.result !== 'string') {
+                        this.fileError = 'Gambar QRIS gagal dibaca. Silakan coba lagi.';
+                        $wire.new_qris_data = null;
+                        event.target.value = '';
+                        return;
+                    }
+
+                    this.previewUrl = reader.result;
+                    $wire.new_qris_data = reader.result;
+                };
+                reader.onerror = () => {
+                    this.reading = false;
+                    this.fileError = 'Gambar QRIS gagal dibaca. Silakan coba lagi.';
+                    $wire.new_qris_data = null;
+                    event.target.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        }"
+        class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {{-- Kiri: Form Detail Lapak (7 cols) --}}
         <div class="lg:col-span-7 glass-card rounded-3xl p-6 sm:p-8 shadow-md shadow-blue-900/5">
             <h2 class="text-lg font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
@@ -135,7 +179,7 @@
                 </div>
 
                 <div class="pt-2">
-                    <button type="submit" 
+                    <button type="submit" x-bind:disabled="reading"
                         class="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold text-sm shadow-md shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
                         <span wire:loading.remove wire:target="updateProfile">Simpan Perubahan</span>
                         <span wire:loading wire:target="updateProfile" class="flex items-center gap-2">
@@ -154,38 +198,36 @@
             </h2>
 
             <div class="flex-1 flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 text-center">
-                @if ($new_qris)
-                    {{-- Preview Gambar Baru yang Dipilih --}}
+                <template x-if="previewUrl">
                     <div class="space-y-2">
-                        <img src="{{ $new_qris->temporaryUrl() }}" alt="Preview QRIS" class="w-48 h-48 object-contain rounded-xl shadow-sm border border-slate-200 bg-white mx-auto">
+                        <img x-bind:src="previewUrl" alt="Preview QRIS" class="w-48 h-48 object-contain rounded-xl shadow-sm border border-slate-200 bg-white mx-auto">
                         <span class="inline-block text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">Gambar Baru Siap Disimpan</span>
                     </div>
-                @elseif ($merchant->qris_image)
-                    {{-- QRIS yang Sudah Ada --}}
-                    <div class="space-y-2">
-                        <img src="{{ asset('storage/' . $merchant->qris_image) }}" alt="QRIS {{ $merchant->name }}" class="w-48 h-48 object-contain rounded-xl shadow-sm border border-slate-200 bg-white mx-auto">
+                </template>
+
+                <div x-show="!previewUrl" class="space-y-2">
+                    @if ($merchant->qrisImageUrl())
+                        <img src="{{ $merchant->qrisImageUrl() }}" alt="QRIS {{ $merchant->name }}" class="w-48 h-48 object-contain rounded-xl shadow-sm border border-slate-200 bg-white mx-auto">
                         <span class="inline-block text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">QRIS Aktif Terpasang</span>
-                    </div>
-                @else
-                    {{-- Belum Ada QRIS --}}
-                    <div class="py-6">
-                        <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
-                            QR
+                    @else
+                        <div class="py-6">
+                            <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
+                                QR
+                            </div>
+                            <p class="text-xs font-bold text-slate-700">Belum Ada QRIS</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Unggah screenshot gambar QRIS m-banking atau e-wallet toko Anda.</p>
                         </div>
-                        <p class="text-xs font-bold text-slate-700">Belum Ada QRIS</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Unggah screenshot gambar QRIS m-banking atau e-wallet toko Anda.</p>
-                    </div>
-                @endif
+                    @endif
+                </div>
 
                 <div class="mt-4 w-full">
-                    <label class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-400 text-xs font-bold text-slate-700 hover:text-blue-600 shadow-xs cursor-pointer transition">
+                    <label for="qris-image" class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-400 text-xs font-bold text-slate-700 hover:text-blue-600 shadow-xs cursor-pointer transition">
                         <span>Pilih File QRIS...</span>
-                        <input type="file" wire:model="new_qris" accept="image/*" class="hidden">
                     </label>
-                    <div wire:loading wire:target="new_qris" class="text-[10px] text-blue-600 font-semibold mt-1.5 block">
-                        Memproses file gambar...
-                    </div>
-                    @error('new_qris') <span class="text-[11px] text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
+                    <input id="qris-image" type="file" x-on:change="readQris($event)" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" x-bind:disabled="reading" class="sr-only">
+                    <div x-show="reading" class="text-[10px] text-blue-600 font-semibold mt-1.5">Memproses file gambar...</div>
+                    <p x-show="fileError" x-text="fileError" class="text-[11px] text-rose-500 font-medium mt-1 block"></p>
+                    @error('new_qris_data') <span class="text-[11px] text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                 </div>
             </div>
 

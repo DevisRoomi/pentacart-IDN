@@ -79,7 +79,7 @@ class BuyerShopCatalogTest extends TestCase
         Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
             ->assertSee('Pisang Coklat Lumer')
             ->assertSee('Es Teh Solo Segar')
-            ->set('search', 'Pisang')
+            ->set('search', 'pisang')
             ->assertSee('Pisang Coklat Lumer')
             ->assertDontSee('Es Teh Solo Segar')
             ->set('search', 'MenuTidakAda')
@@ -112,11 +112,18 @@ class BuyerShopCatalogTest extends TestCase
 
     public function test_buyer_can_toggle_qris_modal(): void
     {
+        $imageBlob = $this->merchant->qrisImageBlob()->create([
+            'mime_type' => 'image/png',
+            'content_hash' => str_repeat('c', 64),
+            'content' => 'qris image bytes',
+        ]);
+
         Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
             ->assertSet('showQrisModal', false)
             ->call('openQrisModal')
             ->assertSet('showQrisModal', true)
             ->assertSee('QRIS Pembayaran Lapak')
+            ->assertSee($imageBlob->url())
             ->call('closeQrisModal')
             ->assertSet('showQrisModal', false);
     }
@@ -184,6 +191,53 @@ class BuyerShopCatalogTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
+    public function test_cannot_order_when_the_merchant_schedule_is_closed(): void
+    {
+        $this->merchant->update([
+            'schedule' => [['start' => '09:00', 'end' => '10:00']],
+        ]);
+        $this->travelTo(now('Asia/Jakarta')->setTime(15, 0));
+
+        Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
+            ->call('addToCart', $this->productA->id)
+            ->set('buyer_name', 'Budi Santoso')
+            ->set('buyer_phone', '081234567890')
+            ->set('dorm_location', 'Gedung Ali Kamar 102')
+            ->call('orderViaWhatsApp')
+            ->assertHasErrors(['cart']);
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_order_rejects_invalid_cart_quantities(): void
+    {
+        Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
+            ->set('cart', [$this->productA->id => -1])
+            ->set('buyer_name', 'Budi Santoso')
+            ->set('buyer_phone', '081234567890')
+            ->set('dorm_location', 'Gedung Ali Kamar 102')
+            ->call('orderViaWhatsApp')
+            ->assertHasErrors(['cart.'.$this->productA->id]);
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_order_rejects_a_product_that_became_unavailable(): void
+    {
+        $checkout = Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
+            ->call('addToCart', $this->productA->id)
+            ->set('buyer_name', 'Budi Santoso')
+            ->set('buyer_phone', '081234567890')
+            ->set('dorm_location', 'Gedung Ali Kamar 102');
+
+        $this->productA->update(['is_available' => false]);
+
+        $checkout->call('orderViaWhatsApp')
+            ->assertHasErrors(['cart']);
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
     public function test_displays_uploaded_product_image_when_available(): void
     {
         $productWithImage = Product::create([
@@ -197,6 +251,18 @@ class BuyerShopCatalogTest extends TestCase
         Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
             ->assertSee('Dimsum Mentai Spesial')
             ->assertSee(asset('storage/products/dimsum-mentai.jpg'));
+    }
+
+    public function test_displays_database_stored_product_image_when_available(): void
+    {
+        $imageBlob = $this->productA->imageBlob()->create([
+            'mime_type' => 'image/png',
+            'content_hash' => str_repeat('b', 64),
+            'content' => 'image bytes',
+        ]);
+
+        Livewire::test(ShopCatalog::class, ['merchant' => $this->merchant])
+            ->assertSee($imageBlob->url());
     }
 
     public function test_displays_food_illustration_placeholder_when_product_has_no_image(): void
