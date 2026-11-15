@@ -2,6 +2,12 @@ name: Migrate production database
 
 on:
   workflow_dispatch:
+    inputs:
+      import_public_listings:
+        description: Import the unclaimed student listings and QRIS images
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -25,9 +31,12 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
-          extensions: pdo_pgsql
+          extensions: gd, pdo_pgsql
           coverage: none
       - name: Install production dependencies
         run: composer install --no-dev --no-interaction --prefer-dist
       - name: Run pending migrations
         run: php artisan migrate --force
+      - name: Import public listings and QRIS images
+        if: ${{ inputs.import_public_listings }}
+        run: php artisan merchants:import-public --force

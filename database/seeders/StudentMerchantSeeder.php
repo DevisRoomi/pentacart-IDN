@@ -4,70 +4,91 @@ namespace Database\Seeders;
 
 use App\Models\Merchant;
 use App\Models\Product;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class StudentMerchantSeeder extends Seeder
 {
     public function run(): void
     {
-        $defaultPassword = Hash::make('kampus123');
+        foreach (self::listings() as $data) {
+            $merchant = Merchant::firstOrNew(['slug' => $data['slug']]);
 
-        $students = [
+            if ($merchant->exists && $merchant->user_id !== null) {
+                continue;
+            }
+
+            $merchant->fill([
+                'user_id' => null,
+                'name' => $data['shop_name'],
+                'phone' => $data['phone'],
+                'qris_image' => 'https://drive.google.com/uc?export=view&id='.$data['qris_drive_id'],
+                'location' => $data['location'],
+                'description' => $data['description'],
+                'keywords' => $data['keywords'],
+                'is_open' => true,
+                'schedule' => $data['schedule'],
+            ]);
+            $merchant->save();
+
+            foreach ($data['products'] as $product) {
+                Product::updateOrCreate(
+                    [
+                        'merchant_id' => $merchant->id,
+                        'name' => $product['name'],
+                    ],
+                    [
+                        'price' => $product['price'],
+                        'description' => $product['description'],
+                        'is_available' => true,
+                    ]
+                );
+            }
+        }
+    }
+
+    public static function listings(): array
+    {
+        return [
             [
-                'student_name' => 'Hammam Fauzul Adzim',
-                'email' => 'hammam@pentacart.idn',
                 'phone' => '6281455147800',
-                'shop_name' => 'Gorio Rio Asrama',
+                'shop_name' => 'Gorio Rio',
                 'slug' => 'gorio-rio-asrama',
-                'category' => 'Minuman',
-                'location' => 'Asrama Putra - Kamar 2',
-                'description' => 'Minuman es gorio rio.',
-                'keywords' => 'Minuman & Es, gorio rio, es blender, kamar 2, hammam',
+                'location' => 'Kamar 2',
+                'description' => 'Minuman es gorio rio. Harga belum dicantumkan; hubungi penjual untuk harga.',
+                'keywords' => 'Minuman & Es, gorio rio, es blender, kamar 2',
                 'schedule' => [
                     ['start' => '12:00', 'end' => '15:30'],
                 ],
-                'qris_file' => 'student-gorio-rio.jpg',
-                'products' => [
-                    ['name' => 'Gorio Rio Es', 'price' => 5000, 'description' => null],
-                ],
+                'qris_drive_id' => '1AFW1_x3aWlt4157r8dZ_ueps137DnuVG',
+                'products' => [],
             ],
             [
-                'student_name' => 'Ghulam Zaky',
-                'email' => 'ghulam@pentacart.idn',
                 'phone' => '6281412135854',
-                'shop_name' => 'Zaky Junk Food',
+                'shop_name' => 'Junk Food',
                 'slug' => 'zaky-junk-food',
-                'category' => 'Makanan Ringan',
-                'location' => 'Asrama Putra',
+                'location' => 'Asrama',
                 'description' => 'Junk food.',
-                'keywords' => 'Snack & Cemilan, fast food, gorengan, ghulam',
+                'keywords' => 'Snack & Cemilan, fast food, gorengan',
                 'schedule' => [
                     ['start' => '11:30', 'end' => '13:00'],
                     ['start' => '16:00', 'end' => '17:30'],
                 ],
-                'qris_file' => 'student-junk-food.png',
+                'qris_drive_id' => '1vXYufmqMQ_zcn0ndjtrABizVbiUak5Ix',
                 'products' => [
                     ['name' => 'Junk Food', 'price' => 12000, 'description' => null],
                 ],
             ],
             [
-                'student_name' => 'Muhammad Maulana Arya Chandra',
-                'email' => 'aryachandra@pentacart.idn',
                 'phone' => '6282288705542',
-                'shop_name' => 'Mie Arya Asrama',
+                'shop_name' => 'Mie',
                 'slug' => 'mie-arya-asrama',
-                'category' => 'Makanan Berat',
-                'location' => 'Asrama Putra',
+                'location' => 'Asrama',
                 'description' => 'Mie instan dan jasa masak ba\'da maghrib sampai 21.00. Pesan mie kuah usahakan bawa mangkok sendiri.',
-                'keywords' => 'Makanan Berat, mie, jasa masak, asrama, arya',
+                'keywords' => 'Makanan Berat, mie, jasa masak, asrama',
                 'schedule' => [
                     ['start' => '18:15', 'end' => '21:00'],
                 ],
-                'qris_file' => 'student-mie.png',
+                'qris_drive_id' => '1Xwxp7IGOLyhIzoa7WbV-CyFXQthBnm0I',
                 'products' => [
                     ['name' => '1 Mie', 'price' => 6000, 'description' => null],
                     ['name' => '2 Mie', 'price' => 10000, 'description' => null],
@@ -75,19 +96,16 @@ class StudentMerchantSeeder extends Seeder
                 ],
             ],
             [
-                'student_name' => 'Rafi Albani',
-                'email' => 'rafi@pentacart.idn',
                 'phone' => '6282298791015',
                 'shop_name' => 'Basreng, Usus, Kacang',
                 'slug' => 'basreng-usus-kacang',
-                'category' => 'Makanan Ringan',
                 'location' => 'Kamar Asrama',
                 'description' => 'Siap antar sekitar Politeknik IDN.',
-                'keywords' => 'Snack & Cemilan, basreng, usus, kacang, rafi',
+                'keywords' => 'Snack & Cemilan, basreng, usus, kacang',
                 'schedule' => [
                     ['start' => '08:00', 'end' => '22:00'],
                 ],
-                'qris_file' => 'student-basreng-usus-kacang.jpg',
+                'qris_drive_id' => '1ZtPF85dN8C6d9MBIFCfbcd1EHCEFUa1t',
                 'products' => [
                     ['name' => 'Basreng (3 pcs)', 'price' => 5000, 'description' => null],
                     ['name' => 'Usus (2 pcs)', 'price' => 5000, 'description' => null],
@@ -95,37 +113,31 @@ class StudentMerchantSeeder extends Seeder
                 ],
             ],
             [
-                'student_name' => 'Muhammad Tsaqif Arhab',
-                'email' => 'tsaqif@pentacart.idn',
                 'phone' => '6282120856921',
                 'shop_name' => 'Aqeepstore',
                 'slug' => 'aqeepstore',
-                'category' => 'Makanan Ringan',
                 'location' => 'Kamar Asrama',
                 'description' => 'Moring pedas & asin.',
-                'keywords' => 'Snack & Cemilan, moring, pedas, asin, tsaqif',
+                'keywords' => 'Snack & Cemilan, moring, pedas, asin',
                 'schedule' => [
                     ['start' => '08:00', 'end' => '22:00'],
                 ],
-                'qris_file' => 'student-aqeepstore.jpg',
+                'qris_drive_id' => '19Q0UIizTBzn0jHH6kuE2gKwQt3aYsX2O',
                 'products' => [
                     ['name' => 'Moring Pedas & Asin', 'price' => 2000, 'description' => null],
                 ],
             ],
             [
-                'student_name' => 'Muhammad Nabil Rizkiarda',
-                'email' => 'nabil@pentacart.idn',
                 'phone' => '6282289224094',
                 'shop_name' => 'Kripik Pisang Krispy',
                 'slug' => 'kripik-pisang-krispy',
-                'category' => 'Makanan Ringan',
                 'location' => 'Asrama 4',
                 'description' => 'Jasa antar lingkungan IDN.',
-                'keywords' => 'Snack & Cemilan, keripik pisang, coklat, vanilla, greentea, asrama 4, nabil',
+                'keywords' => 'Snack & Cemilan, keripik pisang, coklat, vanilla, greentea, asrama 4',
                 'schedule' => [
                     ['start' => '07:00', 'end' => '23:00'],
                 ],
-                'qris_file' => 'student-kripik-pisang-krispy.png',
+                'qris_drive_id' => '1eQNHkC6eqYduYF_uMaizPdEdAw0htj7J',
                 'products' => [
                     ['name' => 'Keripik Pisang Rasa Coklat', 'price' => 2500, 'description' => null],
                     ['name' => 'Keripik Pisang Rasa Vanilla', 'price' => 2500, 'description' => null],
@@ -133,119 +145,62 @@ class StudentMerchantSeeder extends Seeder
                 ],
             ],
             [
-                'student_name' => 'Dzulfathan',
-                'email' => 'dzulfathan@pentacart.idn',
                 'phone' => '6285814965129',
                 'shop_name' => 'Roti AOKA',
                 'slug' => 'roti-aoka',
-                'category' => 'Makanan Ringan',
                 'location' => 'Asrama 2',
                 'description' => 'Roti AOKA siap santap.',
-                'keywords' => 'Snack & Cemilan, roti aoka, asrama 2, dzulfathan',
+                'keywords' => 'Snack & Cemilan, roti aoka, asrama 2',
                 'schedule' => [
                     ['start' => '06:00', 'end' => '23:00'],
                 ],
-                'qris_file' => 'student-roti-aoka.jpg',
+                'qris_drive_id' => '1MdzHdRPpH-yic39TiOcwf9HhATP5nDww',
                 'products' => [
                     ['name' => 'Roti AOKA', 'price' => 3000, 'description' => null],
                 ],
             ],
             [
-                'student_name' => 'Azhim',
-                'email' => 'azhim@pentacart.idn',
                 'phone' => '6289541139369',
                 'shop_name' => 'Ubilum',
                 'slug' => 'ubilum',
-                'category' => 'Makanan Ringan',
                 'location' => 'Kos',
-                'description' => 'Ubilum.',
-                'keywords' => 'Snack & Cemilan, ubilum, kos, azhim',
+                'description' => 'Ubilum. Harga belum dicantumkan; hubungi penjual untuk harga.',
+                'keywords' => 'Snack & Cemilan, ubilum, kos',
                 'schedule' => [
                     ['start' => '08:00', 'end' => '22:00'],
                 ],
-                'qris_file' => 'student-ubilum.jpg',
-                'products' => [
-                    ['name' => 'Ubilum', 'price' => 5000, 'description' => null],
-                ],
+                'qris_drive_id' => '1bi6jixcnvrp3PaePPqItxneaAbDzbZDg',
+                'products' => [],
             ],
             [
-                'student_name' => 'Fauzan Rizky',
-                'email' => 'fauzan@pentacart.idn',
                 'phone' => '6285719496404',
                 'shop_name' => 'Cordog',
                 'slug' => 'cordog',
-                'category' => 'Makanan Ringan',
                 'location' => 'Sakan 1',
-                'description' => 'Cordog.',
-                'keywords' => 'Snack & Cemilan, cordog, sakan 1, fauzan',
+                'description' => 'Cordog. Harga belum dicantumkan; hubungi penjual untuk harga.',
+                'keywords' => 'Snack & Cemilan, cordog, sakan 1',
                 'schedule' => [
                     ['start' => '16:00', 'end' => '22:00'],
                 ],
-                'qris_file' => 'student-cordog.jpg',
-                'products' => [
-                    ['name' => 'Cordog', 'price' => 8000, 'description' => null],
-                ],
+                'qris_drive_id' => '1her8qn44NwXfWbXs4McWuIrJZpfSrX0s',
+                'products' => [],
             ],
             [
-                'student_name' => 'Muhammad Azhar Habibillah',
-                'email' => 'azhar@pentacart.idn',
                 'phone' => '6285157166459',
                 'shop_name' => 'Ceroxand Crisp Co.',
                 'slug' => 'ceroxand-crisp-co',
-                'category' => 'Makanan Ringan',
                 'location' => 'Saung 1',
                 'description' => 'Basreng Ceroxand.',
-                'keywords' => 'Snack & Cemilan, basreng, saung 1, azhar',
+                'keywords' => 'Snack & Cemilan, basreng, saung 1',
                 'schedule' => [
                     ['start' => '08:00', 'end' => '23:00'],
                 ],
-                'qris_file' => 'student-ceroxand-crisp-co.jpg',
+                'qris_drive_id' => '1u2OvFV--xEiTRPM0RXtRUZTyIHG1YUkl',
                 'products' => [
                     ['name' => 'Basreng (1 pcs)', 'price' => 1500, 'description' => null],
                     ['name' => 'Paket Murah Basreng (4 pcs)', 'price' => 5000, 'description' => null],
                 ],
             ],
         ];
-
-        foreach ($students as $data) {
-            $user = User::firstOrCreate(
-                ['email' => $data['email']],
-                [
-                    'name' => $data['student_name'],
-                    'password' => $defaultPassword,
-                ]
-            );
-
-            $qrisRelativePath = 'qris-images/' . $data['qris_file'];
-
-            $merchant = Merchant::updateOrCreate(
-                ['slug' => $data['slug']],
-                [
-                    'user_id' => $user->id,
-                    'name' => $data['shop_name'],
-                    'phone' => $data['phone'],
-                    'qris_image' => $qrisRelativePath,
-                    'location' => $data['location'],
-                    'description' => $data['description'],
-                    'keywords' => $data['keywords'],
-                    'is_open' => true,
-                    'schedule' => $data['schedule'],
-                ]
-            );
-
-            foreach ($data['products'] as $prod) {
-                Product::updateOrCreate(
-                    [
-                        'merchant_id' => $merchant->id,
-                        'name' => $prod['name'],
-                    ],
-                    [
-                        'price' => $prod['price'],
-                        'description' => $prod['description'],
-                        'is_available' => true,
-                    ]
-                );
-            }
-        }
     }
 }

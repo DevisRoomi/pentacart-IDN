@@ -36,6 +36,8 @@ Gunakan `APP_KEY` yang sama pada setiap deployment Production. Jangan gunakan ke
 
 Di GitHub, tambahkan secret `PRODUCTION_DB_URL` (URL Neon yang sama) pada environment `production`. Setelah workflow migrasi tersedia di branch `main`, jalankan **Actions → Migrate production database → Run workflow** satu kali sebelum menerima data produksi. Workflow hanya menjalankan migrasi yang belum diterapkan.
 
+Jika ingin mengimpor daftar lapak awal dari formulir, pilih input **Import the unclaimed student listings and QRIS images** saat menjalankan workflow. Import ini membuat lapak tanpa akun atau password, menyimpan QRIS di PostgreSQL, dan aman dijalankan ulang. Lapak yang sudah terhubung ke akun akan dilewati.
+
 ## 4. Deploy dan pembaruan
 
 Push atau merge ke `main` akan menjalankan tes PostgreSQL melalui GitHub Actions dan memicu deployment Vercel. Atur pemeriksaan GitHub Actions sebagai pemeriksaan wajib sebelum merge agar kode yang gagal tes tidak masuk ke branch produksi. Pull request menghasilkan preview Vercel.
@@ -43,6 +45,7 @@ Push atau merge ke `main` akan menjalankan tes PostgreSQL melalui GitHub Actions
 ## Catatan gambar dan kuota
 
 - Setiap unggahan QRIS atau foto menu dibatasi maksimal 2 MB dan disimpan di tabel PostgreSQL `image_blobs`.
+- Data formulir yang tersedia tidak menyertakan foto produk; QRIS dapat diimpor dari tautan Drive publik.
 - Data gambar tetap tersedia setelah deployment atau restart karena tersimpan di database, tetapi ikut mengurangi kuota penyimpanan Neon.
 - Gambar lama yang hanya berupa path filesystem lokal tidak otomatis dipindahkan ke database. Unggah ulang gambar tersebut setelah deploy; URL gambar eksternal tetap didukung.
 - Vercel Hobby dan Neon Free memiliki batas penggunaan yang dapat berubah. Periksa [paket Vercel](https://vercel.com/docs/plans/hobby) dan [paket Neon](https://neon.com/pricing) sebelum menerima beban produksi.
