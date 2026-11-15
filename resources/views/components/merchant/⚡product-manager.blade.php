@@ -225,7 +225,7 @@ new #[Title('Kelola Menu - PentaCart IDN')] class extends Component
 
         @forelse ($this->products as $product)
             <article wire:key="product-{{ $product->id }}" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-slate-100 last:border-b-0">
-                <img src="{{ $product->image ? asset('storage/'.$product->image) : asset('images/product-placeholder.svg') }}"
+                <img src="{{ $product->image ? \Illuminate\Support\Facades\Storage::disk('public')->url($product->image) : asset('images/product-placeholder.svg') }}"
                     alt="{{ $product->name }}" class="h-20 w-20 shrink-0 rounded-xl border border-slate-200 object-cover">
                 <div class="min-w-0">
                     <h3 class="font-bold text-slate-900">{{ $product->name }}</h3>

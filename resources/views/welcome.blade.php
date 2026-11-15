@@ -162,55 +162,8 @@
                     </a>
                 </div>
 
-                {{-- Desktop Navigation Buttons (Geser Kiri/Kanan) --}}
-                <div class="hidden md:inline-flex items-center gap-1.5">
-                    <button type="button"
-                            onclick="scrollRail('left')"
-                            aria-label="Geser ke kiri"
-                            class="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-slate-200/80 shadow-2xs transition cursor-pointer">
-                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-                    <button type="button"
-                            onclick="scrollRail('right')"
-                            aria-label="Geser ke kanan"
-                            class="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-slate-200/80 shadow-2xs transition cursor-pointer">
-                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
-                </div>
-
                 <span class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200/70 px-3 py-1.5 rounded-xl">
                     {{ $merchants->count() }} Lapak
-                </span>
-            </div>
-        </div>
-
-        {{-- Ruler Tick Meter Indicator (|||||||) di Atas Rel Kartu --}}
-        <div class="hidden md:flex items-center justify-between gap-4 py-2 px-4 mb-2 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-2xs">
-            <div class="flex items-center gap-2 text-[11px] font-black tracking-wide text-slate-700">
-                <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-                <span>POSISI REL KATALOG</span>
-            </div>
-
-            {{-- Strip Batang Meteran Ticks (|||||||) --}}
-            <div id="ruler-ticks-container" class="flex-1 flex items-center justify-center gap-2 px-4">
-                @for ($i = 0; $i < $merchants->count(); $i++)
-                    <button type="button"
-                            onclick="jumpToRailIndex({{ $i }})"
-                            aria-label="Lompat ke lapak nomor {{ $i + 1 }}"
-                            title="Lapak {{ $i + 1 }}"
-                            class="ruler-tick-item group/tick flex flex-col items-center py-1 px-1 cursor-pointer">
-                        <span class="ruler-bar block w-1.5 h-5 rounded-full transition-all duration-200 {{ $i === 0 ? 'bg-blue-600 h-7 scale-y-110 shadow-sm shadow-blue-500/50' : 'bg-slate-300 group-hover/tick:bg-slate-500' }}"></span>
-                    </button>
-                @endfor
-            </div>
-
-            <div class="flex items-center gap-2">
-                <span id="ruler-index-badge" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-black tracking-wide shadow-2xs">
-                    01 / {{ sprintf('%02d', $merchants->count()) }}
                 </span>
             </div>
         </div>
@@ -241,26 +194,23 @@
                 @endif
             </div>
         @else
-            {{-- Horizontal Rail Container (Desktop: Horizontal Scroll + 3D Tilt; Mobile: Grid Rapih) --}}
-            <div class="relative group/rail pt-2 sm:pt-4">
-                
-                {{-- Horizontal Scroller --}}
-                <div id="merchant-rail-track"
-                     class="merchant-rail-track flex flex-col md:flex-row md:overflow-x-auto md:overflow-y-hidden md:scroll-smooth gap-5 sm:gap-6 pb-4 pt-2 md:snap-x md:snap-mandatory no-scrollbar"
-                     style="perspective: 1200px;">
+            {{-- Katalog Lapak: tampil dalam grid responsif tanpa scroll horizontal --}}
+            <div class="pt-2 sm:pt-4">
+                <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-5 sm:gap-6 pb-4 pt-2">
                     
                     @foreach ($merchants as $m)
 
                         @php
                             $op = $m->operationalStatus();
-                            $qrisUrl = $m->qris_image ? asset('storage/' . $m->qris_image) : null;
+                            $qrisUrl = $m->qris_image ? \Illuminate\Support\Facades\Storage::disk('public')->url($m->qris_image) : null;
                             $waChatText = rawurlencode("Halo {$m->name}, saya lihat lapaknya di PentaCart IDN. Mau tanya / pesan ya!");
                             $waUrl = 'https://wa.me/' . preg_replace('/[^0-9]/', '', $m->phone) . '?text=' . $waChatText;
                         @endphp
 
                         <article id="card-{{ $m->slug }}"
                                  onmouseenter="playHapticSound('hover')"
-                                 class="merchant-bento-card group/card relative rounded-3xl p-4 sm:p-5 bg-white/95 border border-slate-200/80 shadow-md shadow-blue-900/5 flex flex-col justify-between overflow-hidden w-full md:w-[305px] lg:w-[320px] md:shrink-0 md:snap-start md:min-h-[415px] transition-all">
+                                 class="merchant-bento-card animate-editorial-in group/card relative rounded-3xl p-4 sm:p-5 bg-white/95 border border-slate-200/80 shadow-md shadow-blue-900/5 flex flex-col justify-between overflow-hidden w-full min-h-[330px] sm:min-h-[380px] transition-all"
+                                 style="animation-delay: {{ min($loop->index * 55, 330) }}ms;">
                             
                             {{-- Ambient Glass Accent --}}
                             <div class="pointer-events-none absolute -right-12 -top-12 w-36 h-36 rounded-full bg-blue-500/5 blur-2xl group-hover/card:bg-blue-500/10 transition-colors"></div>
@@ -389,20 +339,6 @@
                             </div>
                         </article>
                     @endforeach
-                </div>
-
-                {{-- Horizontal Scroll Progress Track (Khusus Desktop) --}}
-                <div class="hidden md:flex items-center justify-between gap-4 mt-3 pt-2 border-t border-slate-100 text-slate-400 text-[11px] font-bold">
-                    <span class="flex items-center gap-1.5 text-blue-600">
-                        <svg class="size-4 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                        Gunakan tombol panah keyboard (&larr; &rarr;), roda mouse, atau klik tombol untuk menggeser rel
-                    </span>
-                    <div class="flex-1 max-w-xs h-1.5 rounded-full bg-slate-200/80 overflow-hidden">
-                        <div id="rail-progress-bar" class="h-full bg-blue-600 rounded-full transition-all duration-150" style="width: 15%;"></div>
-                    </div>
-                    <span id="rail-counter-label" class="text-slate-600">1 / {{ $merchants->count() }} Lapak</span>
                 </div>
 
             </div>
@@ -565,115 +501,6 @@
             }
         }
 
-        /* -----------------------------------------------------------
-         * Horizontal Rail Controller (Desktop Wheel to Horizontal + 3D Tilt)
-         * ----------------------------------------------------------- */
-        const railTrack = document.getElementById('merchant-rail-track');
-        let lastPlayedTickPos = 0;
-
-        function scrollRail(direction = 'right') {
-            if (!railTrack) return;
-            playHapticSound('tick');
-            const scrollDistance = 330;
-            railTrack.scrollBy({
-                left: direction === 'right' ? scrollDistance : -scrollDistance,
-                behavior: 'smooth'
-            });
-        }
-
-        // Lompat langsung ke lapak tertentu via klik meteran tick (|||||||)
-        function jumpToRailIndex(index) {
-            if (!railTrack) return;
-            playHapticSound('tick');
-            const cards = railTrack.querySelectorAll('.merchant-bento-card');
-            if (cards[index]) {
-                cards[index].scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest',
-                    inline: 'center'
-                });
-            }
-        }
-
-        if (railTrack && window.innerWidth >= 768) {
-            // Konversi Scroll Vertikal Roda Mouse ke Horizontal Scroll secara Natural
-            railTrack.addEventListener('wheel', (e) => {
-                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                    // Hanya hijack jika kursor berada tepat di atas rel kartu
-                    e.preventDefault();
-                    railTrack.scrollLeft += e.deltaY * 0.9;
-                }
-            }, { passive: false });
-
-            // Update Progress Bar & Real-time 3D Tilt Effect
-            railTrack.addEventListener('scroll', () => {
-                const maxScroll = railTrack.scrollWidth - railTrack.clientWidth;
-                if (maxScroll <= 0) return;
-
-                const progress = Math.min(1, Math.max(0, railTrack.scrollLeft / maxScroll));
-                const bar = document.getElementById('rail-progress-bar');
-                if (bar) {
-                    bar.style.width = Math.max(10, progress * 100) + '%';
-                }
-
-                // Bunyikan tick audio tiap berpindah kartu (~280px)
-                if (Math.abs(railTrack.scrollLeft - lastPlayedTickPos) > 280) {
-                    playHapticSound('tick');
-                    lastPlayedTickPos = railTrack.scrollLeft;
-                }
-
-                // Update Progress Bar & Real-time 3D Tilt Effect
-                const trackRect = railTrack.getBoundingClientRect();
-                const trackCenter = trackRect.left + trackRect.width / 2;
-                const cards = railTrack.querySelectorAll('.merchant-bento-card');
-                const tickBars = document.querySelectorAll('.ruler-bar');
-
-                let closestIndex = 0;
-                let minDistance = Infinity;
-
-                cards.forEach((card, index) => {
-                    const cardRect = card.getBoundingClientRect();
-                    const cardCenter = cardRect.left + cardRect.width / 2;
-                    const distFromCenter = cardCenter - trackCenter;
-                    const normalizedDist = distFromCenter / (trackRect.width / 2); // -1 s.d. 1
-
-                    if (Math.abs(distFromCenter) < minDistance) {
-                        minDistance = Math.abs(distFromCenter);
-                        closestIndex = index;
-                    }
-
-                    // Formula 3D Timbul (Parallax Depth):
-                    const clampedDist = Math.max(-1.5, Math.min(1.5, normalizedDist));
-                    const rotateY = clampedDist * -6; // Derajat miring
-                    const scale = 1 - Math.abs(clampedDist) * 0.03;
-                    const translateZ = Math.max(0, (1 - Math.abs(clampedDist)) * 20);
-
-                    card.style.transform = `scale(${scale.toFixed(3)}) translateZ(${translateZ.toFixed(1)}px) rotateY(${rotateY.toFixed(2)}deg)`;
-                });
-
-                // Update Ruler Ticks (|||||||) Indicator
-                tickBars.forEach((bar, idx) => {
-                    if (idx === closestIndex) {
-                        bar.className = 'ruler-bar block w-2 h-7 rounded-full bg-blue-600 scale-y-110 shadow-sm shadow-blue-500/50 transition-all duration-200';
-                    } else if (Math.abs(idx - closestIndex) === 1) {
-                        bar.className = 'ruler-bar block w-1.5 h-5 rounded-full bg-slate-400 transition-all duration-200';
-                    } else {
-                        bar.className = 'ruler-bar block w-1.5 h-4 rounded-full bg-slate-300 transition-all duration-200';
-                    }
-                });
-
-                const badge = document.getElementById('ruler-index-badge');
-                if (badge) {
-                    badge.innerText = `${String(closestIndex + 1).padStart(2, '0')} / ${String(cards.length).padStart(2, '0')}`;
-                }
-
-                const counterLabel = document.getElementById('rail-counter-label');
-                if (counterLabel) {
-                    counterLabel.innerText = `${closestIndex + 1} / ${cards.length} Lapak`;
-                }
-            }, { passive: true });
-        }
-
         function copyShopLink(url, btn) {
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(url);
@@ -705,20 +532,6 @@
                 return;
             }
 
-            // Jika pengguna sedang mengetik di input search atau form, jangan geser rel
-            const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-            if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
-                return;
-            }
-
-            // Navigasi Keyboard Panah Kiri / Kanan untuk Geser Rel Kartu
-            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                e.preventDefault();
-                scrollRail('right');
-            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                e.preventDefault();
-                scrollRail('left');
-            }
         });
 
         // Dynamic typing placeholder based on actual registered merchants & students

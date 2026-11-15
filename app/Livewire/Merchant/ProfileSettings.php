@@ -166,20 +166,29 @@ class ProfileSettings extends Component
             'schedule' => empty($cleanSchedule) ? null : $cleanSchedule,
         ];
 
-        // Jika upload QRIS baru
+        $oldQrisImage = null;
+        $newQrisPath = null;
+
         if ($this->new_qris) {
-            // Hapus QRIS lama jika ada
-            if ($this->merchant->qris_image && Storage::disk('public')->exists($this->merchant->qris_image)) {
-                Storage::disk('public')->delete($this->merchant->qris_image);
+            $newQrisPath = $this->new_qris->store('qris-images', 'public');
+
+            if (! is_string($newQrisPath)) {
+                $this->addError('new_qris', 'Gambar QRIS gagal disimpan. Silakan coba lagi.');
+
+                return;
             }
 
-            $path = $this->new_qris->store('qris-images', 'public');
-            $data['qris_image'] = $path;
+            $oldQrisImage = $this->merchant->qris_image;
+            $data['qris_image'] = $newQrisPath;
             $this->new_qris = null;
         }
 
         $this->merchant->update($data);
         $this->merchant->refresh();
+
+        if ($oldQrisImage && $oldQrisImage !== $newQrisPath) {
+            Storage::disk('public')->delete($oldQrisImage);
+        }
 
         session()->flash('status', 'Profil lapak dan QRIS berhasil diperbarui!');
     }

@@ -41,7 +41,7 @@ class MerchantOrderHistoryTest extends TestCase
             'dorm_location' => 'Gedung Usman 302',
             'order_items' => 'Dimsum x2',
             'total_price' => 24000,
-            'ordered_at' => now()->timezone('Asia/Jakarta'),
+            'ordered_at' => now(),
         ]);
 
         Order::create([
@@ -51,7 +51,7 @@ class MerchantOrderHistoryTest extends TestCase
             'dorm_location' => 'Gedung Ali 105',
             'order_items' => 'Gyoza x1',
             'total_price' => 15000,
-            'ordered_at' => now()->timezone('Asia/Jakarta')->subDays(2),
+            'ordered_at' => now()->subDays(2),
         ]);
 
         Order::create([
@@ -61,7 +61,7 @@ class MerchantOrderHistoryTest extends TestCase
             'dorm_location' => 'Gedung Z 999',
             'order_items' => 'Kopi x1',
             'total_price' => 12000,
-            'ordered_at' => now()->timezone('Asia/Jakarta'),
+            'ordered_at' => now(),
         ]);
 
         $this->actingAs($userA);
@@ -96,5 +96,45 @@ class MerchantOrderHistoryTest extends TestCase
         $this->get(route('merchant.profile'))->assertStatus(200);
         $this->get(route('merchant.products'))->assertStatus(200);
         $this->get(route('merchant.orders'))->assertStatus(200);
+    }
+
+    public function test_today_filter_uses_wib_day_boundaries_for_utc_timestamps(): void
+    {
+        $user = User::factory()->create();
+        $merchant = Merchant::create([
+            'user_id' => $user->id,
+            'name' => 'Lapak WIB',
+            'slug' => 'lapak-wib',
+            'phone' => '6281234567890',
+            'is_open' => true,
+        ]);
+        $this->travelTo(now('Asia/Jakarta')->setTime(0, 30));
+
+        Order::create([
+            'merchant_id' => $merchant->id,
+            'buyer_name' => 'Pesanan Hari Ini',
+            'buyer_phone' => '628111111111',
+            'dorm_location' => 'Gedung Ali 101',
+            'order_items' => 'Es Teh x1',
+            'total_price' => 3000,
+            'ordered_at' => now(),
+        ]);
+
+        Order::create([
+            'merchant_id' => $merchant->id,
+            'buyer_name' => 'Pesanan Kemarin',
+            'buyer_phone' => '628222222222',
+            'dorm_location' => 'Gedung Ali 102',
+            'order_items' => 'Roti x1',
+            'total_price' => 4000,
+            'ordered_at' => now()->subMinutes(31),
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(OrderHistory::class)
+            ->set('dateFilter', 'today')
+            ->assertSee('Pesanan Hari Ini')
+            ->assertDontSee('Pesanan Kemarin');
     }
 }

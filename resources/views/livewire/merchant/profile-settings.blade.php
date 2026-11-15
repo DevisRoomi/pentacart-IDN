@@ -163,7 +163,7 @@
                 @elseif ($merchant->qris_image)
                     {{-- QRIS yang Sudah Ada --}}
                     <div class="space-y-2">
-                        <img src="{{ asset('storage/' . $merchant->qris_image) }}" alt="QRIS {{ $merchant->name }}" class="w-48 h-48 object-contain rounded-xl shadow-sm border border-slate-200 bg-white mx-auto">
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($merchant->qris_image) }}" alt="QRIS {{ $merchant->name }}" class="w-48 h-48 object-contain rounded-xl shadow-sm border border-slate-200 bg-white mx-auto">
                         <span class="inline-block text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">QRIS Aktif Terpasang</span>
                     </div>
                 @else
